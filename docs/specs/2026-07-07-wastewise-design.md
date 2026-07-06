@@ -23,8 +23,9 @@ WasteWise is an **autonomous purchasing assistant for restaurants**. A restauran
 - LLM agent adjusts the forecast for **weather + holidays** and explains each change.
 - LLM agent **sources supplier prices** (wholesale benchmark + retail) and recommends where to buy.
 - Produce a **drafted purchase order** the user can approve/export (human-in-the-loop).
-- Run the LLM agents on **vLLM / AMD MI300X** (the hackathon's GPU requirement); dev against Fireworks with a one-line swap.
-- A usable **Next.js** web UI (4 stepwise screens) — feels like a real product.
+- Run the LLM agents on **vLLM / AMD MI300X** — this is the hackathon's **disqualification gate** (Track 3 requires demonstrable AMD compute usage). Dev against Fireworks with a one-line swap; Fireworks is **optional** for Unicorn.
+- A usable **Next.js** web UI (4 stepwise screens) — feels like a real product, and doubles as the recommended **hosted demo URL**.
+- Ship the required Track 3 deliverables: **public GitHub repo, demo video, slide deck (PDF), hosted URL**. All agent outputs in **English** (mandatory).
 
 ### Non-goals (explicitly deferred to v2)
 - **Recipe / bill-of-materials mapping** (dish → ingredients). MVP forecasts and buys at the *item* level.
@@ -72,7 +73,7 @@ vLLM serving an open LLM on AMD MI300X (ROCm)
 ```
 
 ### Two cross-cutting design choices
-1. **LLM behind one interface.** An OpenAI-compatible client; `LLM_BASE_URL` points to **Fireworks** in dev and **vLLM/MI300X** for submission. No code change to switch. De-risks day-1 GPU access.
+1. **LLM behind one interface.** An OpenAI-compatible client; `LLM_BASE_URL` points to **Fireworks** in dev and **vLLM/MI300X** for submission. No code change to switch. De-risks day-1 GPU access. Note: for the Unicorn track, Fireworks is **optional** — the mandatory piece is running inference on **AMD compute (MI300X/vLLM)**, which must remain the production path.
 2. **Swappable data adapters.** Each price/weather source implements a common interface (e.g. `PriceSource`), so markets are pluggable — this is the "market-agnostic" property with no extra work.
 
 ### Solo-friendliness
@@ -173,12 +174,32 @@ Same OpenAI-compatible client regardless of `LLM_BASE_URL`.
 
 ---
 
-## 12. Hackathon fit
+## 12. Hackathon fit (Track 3: Unicorn / Open Innovation)
 
-- **Track:** Unicorn (product potential + originality).
-- **GPU story:** both agent steps run on vLLM / AMD MI300X (ROCm).
-- **Submission:** repo + ~90-second demo video + writeup, before **July 11, 2026**.
-- **Demo beats:** upload → forecast (beats baseline) → "typhoon/holiday" adjusts the order with a reason → sourcing shows savings vs market → approve & export the PO.
+Verified against the official Participant Submission Guide.
+
+- **Track:** Unicorn — original AI app that uses AMD compute; judged by humans on *innovative / technically impressive / practically useful*, gated by demonstrable AMD usage. No fixed task, no Docker image required.
+- **The star (what wins):** the **agent's decision-making** — forecast → adjust with a reason → source cheaper → draft PO. This is the "practically useful + innovative" payload judges score.
+- **The hard gate (must not fail):** **AMD compute usage is required — projects that don't demonstrate it are disqualified.** Both agent steps run inference on **vLLM / AMD MI300X (ROCm)**.
+- **Critical: AMD usage must be machine-detectable in the REPO and SLIDE DECK, not just the video.** Automated pre-screening inspects the GitHub repo, slide deck (PDF), and hosted URL for AMD-resource usage + originality — **it does not process the demo video.** So the repo must include a README section documenting MI300X/vLLM usage plus a `rocm-smi` / vLLM-endpoint screenshot, and the deck must state it explicitly.
+
+### Required deliverables (by July 11, 2026, 15:00 UTC)
+| Item | Required |
+|---|---|
+| Public GitHub repository | Yes |
+| Demo video (~90s) | Yes |
+| Slide deck (PDF) | Yes |
+| Live/hosted URL (Next.js on Vercel) | Optional but recommended — we will provide it |
+
+**Demo beats:** upload → forecast (beats baseline) → weather/holiday adjusts the order with a reason → sourcing shows savings vs market → approve & export the PO.
+
+## 12.1 Compliance checklist (all-tracks rules)
+
+- **English only** — every agent output must be in English (we chose the US market partly for this).
+- **<30s per request** — keep each LLM call within the response-time limit; the structured pipeline (few calls) helps.
+- **No hardcoded/faked answers** — the demo may *cache external API responses* (weather/prices) for reliability, but the agent's reasoning must be genuine, not scripted to specific inputs.
+- **Public repo** at submission time.
+- **MIT `LICENSE`** committed to the repo (lablab general terms; safe default).
 
 ---
 
@@ -196,7 +217,7 @@ Same OpenAI-compatible client regardless of `LLM_BASE_URL`.
 - **Day 1:** repo scaffold; load Kaggle data; forecaster (baseline + XGBoost); `/upload` + `/forecast`.
 - **Day 2:** data adapters (USDA / Kroger / NOAA) + both agent steps against Fireworks; `/sourcing`.
 - **Day 3:** Next.js 4 screens wired to the API; stand up AMD Cloud + vLLM; flip `LLM_BASE_URL`.
-- **Day 4:** pre-cache demo data; polish; record video; write submission.
+- **Day 4:** pre-cache demo data; polish; deploy frontend to Vercel (hosted URL); add MIT `LICENSE` + a README section documenting AMD/MI300X usage with a `rocm-smi`/vLLM-endpoint screenshot; build the **slide deck (PDF)** (must state AMD usage for pre-screening); record demo video; submit.
 
 ---
 
