@@ -32,4 +32,18 @@ describe("Forecast screen", () => {
     await waitFor(() => expect(screen.getAllByText(/Rain forecast lowers dine-in demand/i).length).toBeGreaterThan(0));
     expect(screen.getByText(/18%/)).toBeInTheDocument(); // baseline_delta 0.18 -> "18%"
   });
+
+  it("surfaces a 4xx error inline instead of an infinite skeleton", async () => {
+    vi.spyOn(api, "runForecast").mockRejectedValue(new api.ApiError(422, "Invalid location"));
+    renderWithWizard(<ForecastPage />, { initial: { datasetId: "demo" } });
+    expect(await screen.findByText("Invalid location")).toBeInTheDocument();
+  });
+
+  it("does not redirect to setup when persisted state has a valid dataset (hydration gate)", async () => {
+    vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
+    renderWithWizard(<ForecastPage />, { initial: { datasetId: "demo" } });
+    // give any pending microtasks/effects a chance to run
+    await waitFor(() => expect(screen.queryByText("cabbage")).toBeInTheDocument());
+    expect(push).not.toHaveBeenCalledWith("/setup");
+  });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { DatasetSummary, ForecastResponse, SourcingResponse, Horizon } from "./types";
 
 const KEY = "ww_state";
@@ -24,6 +24,7 @@ const DEFAULTS: WizardState = {
 };
 
 interface WizardContextValue extends WizardState {
+  hydrated: boolean;
   set: (partial: Partial<WizardState>) => void;
 }
 
@@ -31,12 +32,12 @@ const WizardContext = createContext<WizardContextValue | null>(null);
 
 export function WizardProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<WizardState>(DEFAULTS);
-  const hydrated = useRef(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const raw = typeof window !== "undefined" ? window.sessionStorage.getItem(KEY) : null;
     if (raw) setState((s) => ({ ...s, ...JSON.parse(raw) }));
-    hydrated.current = true;
+    setHydrated(true);
   }, []);
 
   const set = (partial: Partial<WizardState>) =>
@@ -46,7 +47,7 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
       return next;
     });
 
-  return <WizardContext.Provider value={{ ...state, set }}>{children}</WizardContext.Provider>;
+  return <WizardContext.Provider value={{ ...state, hydrated, set }}>{children}</WizardContext.Provider>;
 }
 
 export function useWizard(): WizardContextValue {

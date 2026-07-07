@@ -10,13 +10,15 @@ import { Button } from "@/components/ui/button";
 
 export default function OrderPage() {
   const router = useRouter();
-  const { sourcing } = useWizard();
+  const { sourcing, hydrated } = useWizard();
   const [approved, setApproved] = useState(false);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!sourcing) router.push("/sourcing");
-  }, [sourcing, router]);
+  }, [hydrated, sourcing, router]);
 
+  if (!hydrated) return null;
   if (!sourcing) return null;
 
   function download() {

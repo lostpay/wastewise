@@ -28,4 +28,9 @@ describe("wizard store", () => {
     expect(result.current.datasetId).toBe("seed");
     expect(result.current.horizon).toBe("day");
   });
+
+  it("exposes a reactive hydrated flag that becomes true after mount", () => {
+    const { result } = renderHook(() => useWizard(), { wrapper });
+    expect(result.current.hydrated).toBe(true);
+  });
 });

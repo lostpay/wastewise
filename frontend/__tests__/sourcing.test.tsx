@@ -33,4 +33,10 @@ describe("Sourcing screen", () => {
     expect(await screen.findAllByText("Kroger")).toHaveLength(3);
     expect(screen.getByText(/\$92/)).toBeInTheDocument(); // savings
   });
+
+  it("surfaces a 4xx error inline instead of an infinite skeleton", async () => {
+    vi.spyOn(api, "runSourcing").mockRejectedValue(new api.ApiError(422, "Invalid location"));
+    renderWithWizard(<SourcingPage />, { initial: { datasetId: "demo", forecast: DEMO_FORECAST } });
+    expect(await screen.findByText("Invalid location")).toBeInTheDocument();
+  });
 });
