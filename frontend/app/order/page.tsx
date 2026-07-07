@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { poToCsv } from "@/lib/csv";
-import { Stepper } from "@/components/stepper";
 import { POTable } from "@/components/po-table";
 import { Button } from "@/components/ui/button";
 
@@ -33,18 +33,50 @@ export default function OrderPage() {
   }
 
   return (
-    <>
-      <Stepper current={3} />
-      <main className="mx-auto max-w-3xl space-y-6 p-6">
-        <h2 className="text-xl font-semibold">Purchase order</h2>
+    <div className="space-y-6">
+      <Link
+        href="/sourcing"
+        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+      >
+        <span aria-hidden>&larr;</span> Back to Sourcing
+      </Link>
+
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
+          Step 4
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+          Purchase Order
+        </h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Review the draft, approve, and download the CSV for your supplier.
+        </p>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white">
         <POTable lines={sourcing.lines} total={sourcing.total} />
-        <div className="flex items-center gap-3">
-          <Button onClick={() => setApproved(true)} disabled={approved}>
-            {approved ? "Approved ✓" : "Approve"}
-          </Button>
-          <Button variant="secondary" onClick={download}>Download CSV</Button>
-        </div>
-      </main>
-    </>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          onClick={() => setApproved(true)}
+          disabled={approved}
+          className={
+            approved
+              ? "bg-emerald-600 text-white"
+              : "bg-emerald-600 text-white hover:bg-emerald-700"
+          }
+        >
+          {approved ? "Approved ✓" : "Approve"}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={download}
+          className="border border-zinc-200"
+        >
+          Download CSV
+        </Button>
+      </div>
+    </div>
   );
 }

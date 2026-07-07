@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { runSourcing, ApiError } from "@/lib/api";
-import { Stepper } from "@/components/stepper";
 import { PriceTable } from "@/components/price-table";
 import { StatTile } from "@/components/stat-tile";
 import { Button } from "@/components/ui/button";
@@ -37,22 +37,49 @@ export default function SourcingPage() {
   if (hydrated && !forecast) return null;
 
   return (
-    <>
-      <Stepper current={2} />
-      <main className="mx-auto max-w-3xl space-y-6 p-6">
-        <h2 className="text-xl font-semibold">Sourcing</h2>
-        {error ? (
-          <p className="text-sm text-red-600">{error}</p>
-        ) : loading || !sourcing ? (
-          <Skeleton className="h-64 w-full" />
-        ) : (
-          <>
-            <StatTile label="Estimated savings vs. market" value={`$${sourcing.savings.toFixed(2)}`} />
+    <div className="space-y-6">
+      <Link
+        href="/forecast"
+        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+      >
+        <span aria-hidden>&larr;</span> Back to Forecast
+      </Link>
+
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
+          Step 3
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+          Smart Sourcing
+        </h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Best supplier per item, benchmarked against wholesale market prices.
+        </p>
+      </div>
+
+      {error ? (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      ) : loading || !sourcing ? (
+        <Skeleton className="h-64 w-full rounded-xl" />
+      ) : (
+        <>
+          <StatTile
+            label="Estimated savings vs. market"
+            value={`$${sourcing.savings.toFixed(2)}`}
+          />
+          <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white">
             <PriceTable lines={sourcing.lines} />
-            <Button onClick={() => router.push("/order")}>Next: Purchase Order</Button>
-          </>
-        )}
-      </main>
-    </>
+          </div>
+          <Button
+            onClick={() => router.push("/order")}
+            className="bg-zinc-900 text-white hover:bg-zinc-700"
+          >
+            Next: Purchase Order &rarr;
+          </Button>
+        </>
+      )}
+    </div>
   );
 }

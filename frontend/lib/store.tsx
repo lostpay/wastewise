@@ -28,7 +28,7 @@ interface WizardContextValue extends WizardState {
   set: (partial: Partial<WizardState>) => void;
 }
 
-const WizardContext = createContext<WizardContextValue | null>(null);
+export const WizardContext = createContext<WizardContextValue | null>(null);
 
 export function WizardProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<WizardState>(DEFAULTS);
