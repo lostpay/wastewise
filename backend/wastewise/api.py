@@ -1,4 +1,5 @@
 # wastewise/api.py
+from typing import Literal
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -33,12 +34,17 @@ def get_deps() -> dict:
 
 class ForecastRequest(BaseModel):
     dataset_id: str
-    horizon: str = "week"
+    horizon: Literal["day", "week"] = "week"
     location: str = "40.7,-74.0"
 
 
+class SourcingItem(BaseModel):
+    item: str
+    qty: float
+
+
 class SourcingRequest(BaseModel):
-    items: list[dict]
+    items: list[SourcingItem]
     location: str = "40.7,-74.0"
 
 
@@ -70,5 +76,5 @@ def forecast(req: ForecastRequest, deps: dict = Depends(get_deps)):
 
 @app.post("/sourcing")
 def sourcing(req: SourcingRequest, deps: dict = Depends(get_deps)):
-    return run_sourcing(req.items, req.location, deps["wholesale"],
-                        deps["retail"], deps["llm"])
+    return run_sourcing([i.model_dump() for i in req.items], req.location,
+                        deps["wholesale"], deps["retail"], deps["llm"])

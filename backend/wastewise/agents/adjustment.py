@@ -26,7 +26,7 @@ def adjust_forecast(items: list[ForecastItem], weather: WeatherInfo,
     try:
         parsed = extract_json(llm.complete(SYSTEM, user))
         by_item = {p["item"]: p for p in parsed}
-    except (ValueError, KeyError, TypeError):
+    except Exception:
         return _fallback(items)
 
     out: list[AdjustedItem] = []

@@ -1,5 +1,4 @@
 # tests/test_integration.py
-import io
 from fastapi.testclient import TestClient
 from wastewise.models import WeatherInfo, SupplierPrice
 import wastewise.api as api

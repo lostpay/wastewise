@@ -27,3 +27,16 @@ def test_fallback_on_bad_json():
                           precipitation_mm=0), [], llm)
     assert out[0].adjusted_qty == 115  # unchanged recommended qty
     assert out[0].reason == "No adjustment applied."
+
+
+class _RaisingLLM:
+    def complete(self, system, user):
+        raise RuntimeError("endpoint down")
+
+
+def test_fallback_on_llm_transport_error():
+    llm = _RaisingLLM()
+    out = adjust_forecast(_items(), WeatherInfo(condition="Clear", temp_c=25,
+                          precipitation_mm=0), [], llm)
+    assert out[0].adjusted_qty == 115  # unchanged recommended qty
+    assert out[0].reason == "No adjustment applied."

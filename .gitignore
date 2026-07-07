@@ -7,3 +7,4 @@ backend/wastewise/data/cache/
 .pytest_cache/
 node_modules/
 .next/
+*.egg-info/
