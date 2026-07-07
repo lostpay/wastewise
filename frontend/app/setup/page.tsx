@@ -54,6 +54,9 @@ export default function SetupPage() {
       <Stepper current={0} />
       <main className="mx-auto max-w-2xl space-y-6 p-6">
         <h2 className="text-xl font-semibold">Set up your forecast</h2>
+        <p className="text-sm text-muted-foreground">
+          No backend configured? Click <span className="font-medium">Use demo dataset</span> to walk the full flow with sample data.
+        </p>
 
         <div className="space-y-2">
           <Label htmlFor="csv">Sales CSV</Label>
