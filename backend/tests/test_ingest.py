@@ -15,6 +15,18 @@ def test_parse_missing_column_raises():
         parse_sales_csv("day,thing\n2026-01-01,cabbage\n")
 
 
+def test_parse_ragged_row_raises_valueerror():
+    # A row missing the quantity value must raise ValueError (-> 400), not a
+    # TypeError that would surface as a 500.
+    with pytest.raises(ValueError):
+        parse_sales_csv("date,item,quantity\n2026-01-01,cabbage\n")
+
+
+def test_parse_bad_quantity_raises_valueerror():
+    with pytest.raises(ValueError):
+        parse_sales_csv("date,item,quantity\n2026-01-01,cabbage,notanumber\n")
+
+
 def test_summarize(sample_sales):
     summary = summarize("ds1", sample_sales)
     assert summary.dataset_id == "ds1"

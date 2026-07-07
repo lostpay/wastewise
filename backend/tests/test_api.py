@@ -59,3 +59,19 @@ def test_upload_then_forecast_then_sourcing(tmp_path):
                     "location": "40.7,-74.0"})
     assert s.json()["lines"][0]["supplier"] == "Kroger"
     api.app.dependency_overrides.clear()
+
+
+def test_forecast_rejects_malformed_location(tmp_path):
+    client = _client(tmp_path)
+    r = client.post("/forecast", json={"dataset_id": "x", "horizon": "week",
+                    "location": "not-a-latlon"})
+    assert r.status_code == 422
+    api.app.dependency_overrides.clear()
+
+
+def test_upload_rejects_non_utf8(tmp_path):
+    client = _client(tmp_path)
+    r = client.post("/upload", files={"file": ("s.csv",
+                    io.BytesIO(b"\xff\xfe\x00bad"), "text/csv")})
+    assert r.status_code == 400
+    api.app.dependency_overrides.clear()

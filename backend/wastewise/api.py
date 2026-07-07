@@ -1,8 +1,9 @@
 # wastewise/api.py
+import re
 from typing import Literal
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from wastewise.config import get_settings
 from wastewise.storage import DatasetStore
 from wastewise.ingest import parse_sales_csv, summarize
@@ -32,10 +33,25 @@ def get_deps() -> dict:
     }
 
 
-class ForecastRequest(BaseModel):
+_LOCATION_RE = re.compile(r"^-?\d+(\.\d+)?,-?\d+(\.\d+)?$")
+
+
+class _LocatedRequest(BaseModel):
+    location: str = "40.7,-74.0"
+
+    @field_validator("location")
+    @classmethod
+    def _valid_location(cls, v: str) -> str:
+        # location is interpolated into an outbound weather.gov URL path;
+        # pin it to "lat,lon" so untrusted input can't reshape the request.
+        if not _LOCATION_RE.match(v):
+            raise ValueError("location must be 'lat,lon' (e.g. '40.7,-74.0')")
+        return v
+
+
+class ForecastRequest(_LocatedRequest):
     dataset_id: str
     horizon: Literal["day", "week"] = "week"
-    location: str = "40.7,-74.0"
 
 
 class SourcingItem(BaseModel):
@@ -43,9 +59,8 @@ class SourcingItem(BaseModel):
     qty: float
 
 
-class SourcingRequest(BaseModel):
+class SourcingRequest(_LocatedRequest):
     items: list[SourcingItem]
-    location: str = "40.7,-74.0"
 
 
 @app.get("/health")
@@ -55,7 +70,10 @@ def health():
 
 @app.post("/upload")
 async def upload(file: UploadFile = File(...), deps: dict = Depends(get_deps)):
-    text = (await file.read()).decode("utf-8")
+    try:
+        text = (await file.read()).decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="file must be UTF-8 encoded CSV")
     try:
         records = parse_sales_csv(text)
     except ValueError as e:
