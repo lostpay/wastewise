@@ -42,6 +42,8 @@ export default function SetupPage() {
     setLoading(true);
     try {
       advance(await uploadCsv(new File([""], "demo.csv", { type: "text/csv" })));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
