@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+backend/wastewise/data/cache/
+*.sqlite3
+.pytest_cache/
+node_modules/
+.next/
+*.egg-info/
