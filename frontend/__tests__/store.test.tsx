@@ -33,4 +33,14 @@ describe("wizard store", () => {
     const { result } = renderHook(() => useWizard(), { wrapper });
     expect(result.current.hydrated).toBe(true);
   });
+
+  it("recovers from a corrupt persisted state instead of wedging hydration", () => {
+    window.sessionStorage.setItem("ww_state", "{not valid json");
+    const { result } = renderHook(() => useWizard(), { wrapper });
+    // hydration still completes (no thrown effect), defaults are used, and the bad value is dropped
+    expect(result.current.hydrated).toBe(true);
+    expect(result.current.datasetId).toBeNull();
+    expect(result.current.location).toBe("40.7,-74.0");
+    expect(window.sessionStorage.getItem("ww_state")).toBeNull();
+  });
 });

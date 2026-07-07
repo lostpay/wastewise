@@ -35,8 +35,18 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const raw = typeof window !== "undefined" ? window.sessionStorage.getItem(KEY) : null;
-    if (raw) setState((s) => ({ ...s, ...JSON.parse(raw) }));
+    try {
+      const raw = typeof window !== "undefined" ? window.sessionStorage.getItem(KEY) : null;
+      // Parse eagerly (not inside the setState updater) so a corrupt value throws
+      // here, where the catch can handle it, rather than later in the reducer.
+      if (raw) {
+        const restored = JSON.parse(raw) as Partial<WizardState>;
+        setState((s) => ({ ...s, ...restored }));
+      }
+    } catch {
+      // Corrupt persisted state must not wedge hydration — drop it and fall back to defaults.
+      if (typeof window !== "undefined") window.sessionStorage.removeItem(KEY);
+    }
     setHydrated(true);
   }, []);
 
