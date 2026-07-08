@@ -18,7 +18,10 @@ export default function SetupPage() {
   const [error, setError] = useState<string | null>(null);
 
   function advance(res: UploadResponse) {
-    set({ datasetId: res.dataset_id, summary: res.summary });
+    // Clear any forecast/sourcing from a prior dataset. The forecast and
+    // sourcing pages skip recomputation when those values are already present,
+    // so a new upload must reset them or the wizard shows the previous run's data.
+    set({ datasetId: res.dataset_id, summary: res.summary, forecast: null, sourcing: null });
     router.push("/forecast");
   }
 
