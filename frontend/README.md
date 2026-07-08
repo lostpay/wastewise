@@ -19,3 +19,10 @@ why the hosted URL stays live even when the AMD Cloud backend is offline.
 ## Backend
 Runs the two LLM judgment steps on an AMD Radeon PRO W7900 via vLLM — see
 `../docs/AMD_USAGE.md`. Point `NEXT_PUBLIC_API_URL` at that backend for a live run.
+
+## Hosted
+- Live app (Vercel production → Render backend): `<paste production URL>`
+- AMD-backed preview (Vercel preview → W7900 vLLM tunnel): `<paste preview URL, when running>`
+
+Wiring `NEXT_PUBLIC_API_URL` and verifying a real end-to-end run:
+[`../docs/DEPLOY.md`](../docs/DEPLOY.md).

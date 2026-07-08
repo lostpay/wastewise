@@ -1,0 +1,27 @@
+# Render Blueprint for the WasteWise backend (Track A — permanent public API).
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo. Enter the
+# sync:false secrets when prompted. See docs/DEPLOY.md.
+services:
+  - type: web
+    name: wastewise-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: uvicorn wastewise.api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: LLM_BASE_URL
+        value: https://api.fireworks.ai/inference/v1
+      - key: LLM_MODEL
+        value: accounts/fireworks/models/llama-v3p1-8b-instruct
+      - key: LLM_API_KEY
+        sync: false
+      - key: USDA_API_KEY
+        sync: false
+      - key: KROGER_CLIENT_ID
+        sync: false
+      - key: KROGER_CLIENT_SECRET
+        sync: false
