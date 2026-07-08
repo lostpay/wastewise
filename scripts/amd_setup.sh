@@ -53,8 +53,8 @@ Setup complete. Run these in THREE separate terminals:
     cd $WORKDIR/backend && vllm serve $MODEL --port $VLLM_PORT
 
 [2] Run the backend (LLM -> local vLLM):
-    cd $WORKDIR/backend && \
-    LLM_BASE_URL=http://localhost:$VLLM_PORT/v1 LLM_MODEL=$MODEL LLM_API_KEY=dummy \
+    cd $WORKDIR/backend && \\
+    LLM_BASE_URL=http://localhost:$VLLM_PORT/v1 LLM_MODEL=$MODEL LLM_API_KEY=dummy \\
     uvicorn wastewise.api:app --host 0.0.0.0 --port $API_PORT
 
 [3] Expose the backend publicly:
