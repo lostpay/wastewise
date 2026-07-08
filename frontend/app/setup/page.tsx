@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { uploadCsv, ApiError } from "@/lib/api";
@@ -9,6 +10,11 @@ import type { Horizon, UploadResponse } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+const LocationPicker = dynamic(
+  () => import("@/components/ui/location-picker").then((m) => m.LocationPicker),
+  { ssr: false },
+);
 
 export default function SetupPage() {
   const router = useRouter();
@@ -80,32 +86,21 @@ export default function SetupPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="loc" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            Location (lat,lon)
-          </Label>
-          <Input
-            id="loc"
-            value={location}
-            onChange={(e) => set({ location: e.target.value })}
-            className="border-zinc-200 font-mono"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="horizon" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            Horizon
-          </Label>
-          <select
-            id="horizon"
-            className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            value={horizon}
-            onChange={(e) => set({ horizon: e.target.value as Horizon })}
-          >
-            <option value="day">Next day</option>
-            <option value="week">Next week</option>
-          </select>
-        </div>
+      <LocationPicker value={location} onChange={(v) => set({ location: v })} />
+
+      <div className="space-y-2">
+        <Label htmlFor="horizon" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Horizon
+        </Label>
+        <select
+          id="horizon"
+          className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          value={horizon}
+          onChange={(e) => set({ horizon: e.target.value as Horizon })}
+        >
+          <option value="day">Next day</option>
+          <option value="week">Next week</option>
+        </select>
       </div>
 
       {error && (
