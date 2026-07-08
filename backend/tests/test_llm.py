@@ -26,3 +26,34 @@ class _FakeOpenAI:
 def test_complete_returns_content():
     client = LLMClient("url", "key", "model", _openai=_FakeOpenAI())
     assert client.complete("sys", "user") == "hi"
+
+
+class _BoomCompletions:
+    def create(self, **kwargs):
+        raise RuntimeError("connection refused")
+
+
+class _BoomOpenAI:
+    def __init__(self):
+        self.chat = type("Chat", (), {"completions": _BoomCompletions()})
+
+
+def test_ping_live_when_model_responds():
+    client = LLMClient("url", "realkey", "model", _openai=_FakeOpenAI())
+    status = client.ping()
+    assert status.live is True
+
+
+def test_ping_flags_placeholder_key_without_calling():
+    # "changeme" is the shipped default; ping must not even attempt a call.
+    client = LLMClient("url", "changeme", "model", _openai=_BoomOpenAI())
+    status = client.ping()
+    assert status.live is False
+    assert "changeme" in status.detail
+
+
+def test_ping_down_on_transport_error():
+    client = LLMClient("url", "realkey", "model", _openai=_BoomOpenAI())
+    status = client.ping()
+    assert status.live is False
+    assert "connection refused" in status.detail
