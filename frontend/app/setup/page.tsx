@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
@@ -8,7 +8,7 @@ import { uploadCsv, ApiError } from "@/lib/api";
 import { setDemoMode } from "@/lib/demo";
 import type { Horizon, UploadResponse } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CsvDropzone } from "@/components/ui/csv-dropzone";
 import { Label } from "@/components/ui/label";
 
 const LocationPicker = dynamic(
@@ -18,10 +18,24 @@ const LocationPicker = dynamic(
 
 export default function SetupPage() {
   const router = useRouter();
-  const { location, horizon, set } = useWizard();
+  const { location, horizon, datasetId, hydrated, set } = useWizard();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cleared = useRef(false);
+
+  // Landing on Setup means "start over" — clear any dataset/forecast/sourcing
+  // and any prior demo-mode flag so downstream guards (and the sidebar) refuse
+  // to jump ahead until the user picks a CSV or clicks demo again. Runs once
+  // per mount, after hydration, so a genuine advance() call isn't undone.
+  useEffect(() => {
+    if (!hydrated || cleared.current) return;
+    cleared.current = true;
+    if (datasetId) {
+      setDemoMode(false);
+      set({ datasetId: null, summary: null, forecast: null, sourcing: null });
+    }
+  }, [hydrated, datasetId, set]);
 
   function advance(res: UploadResponse) {
     // Clear any forecast/sourcing from a prior dataset. The forecast and
@@ -73,18 +87,7 @@ export default function SetupPage() {
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="csv" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Sales CSV
-        </Label>
-        <Input
-          id="csv"
-          type="file"
-          accept=".csv"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="border-zinc-200"
-        />
-      </div>
+      <CsvDropzone value={file} onChange={setFile} disabled={loading} />
 
       <LocationPicker value={location} onChange={(v) => set({ location: v })} />
 
