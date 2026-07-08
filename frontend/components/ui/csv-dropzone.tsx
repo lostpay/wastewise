@@ -20,7 +20,7 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-async function inspectCsv(file: File): Promise<{ ok: true; columns: string[]; rows: number } | { ok: false; error: string }> {
+export async function inspectCsv(file: File): Promise<{ ok: true; columns: string[]; rows: number } | { ok: false; error: string }> {
   if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv") {
     return { ok: false, error: "File must be a .csv" };
   }

@@ -5,6 +5,7 @@ import {
   APIProvider,
   Map,
   AdvancedMarker,
+  Marker,
   useMap,
   useMapsLibrary,
 } from "@vis.gl/react-google-maps";
@@ -16,7 +17,11 @@ interface LocationPickerProps {
   onChange: (latLon: string) => void;
 }
 
-const MAP_ID = "wastewise-setup-map";
+// AdvancedMarker only renders on a map created with a real Cloud-configured
+// Map ID. If one isn't provided we omit the mapId and fall back to the classic
+// Marker, which works with just an API key — otherwise the marker silently
+// wouldn't appear.
+const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAP_ID;
 
 function parseLatLon(v: string): { lat: number; lng: number } | null {
   const [latStr, lonStr] = v.split(",");
@@ -32,6 +37,13 @@ function formatLatLon(lat: number, lng: number): string {
 function PlacesSearch({ onPick }: { onPick: (lat: number, lng: number, label: string) => void }) {
   const places = useMapsLibrary("places");
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // Keep the latest callback in a ref so the effect can depend on [places]
+  // alone. Depending on `onPick` (a fresh closure each render) would re-run
+  // this effect constantly, and every run creates another Autocomplete whose
+  // `.pac-container` dropdown is appended to <body> and never removed — a DOM
+  // leak that stacks duplicate dropdowns.
+  const onPickRef = useRef(onPick);
+  onPickRef.current = onPick;
 
   useEffect(() => {
     if (!places || !inputRef.current) return;
@@ -40,10 +52,15 @@ function PlacesSearch({ onPick }: { onPick: (lat: number, lng: number, label: st
       const p = ac.getPlace();
       const loc = p.geometry?.location;
       if (!loc) return;
-      onPick(loc.lat(), loc.lng(), p.formatted_address ?? p.name ?? "");
+      onPickRef.current(loc.lat(), loc.lng(), p.formatted_address ?? p.name ?? "");
     });
-    return () => listener.remove();
-  }, [places, onPick]);
+    return () => {
+      listener.remove();
+      google.maps.event.clearInstanceListeners(ac);
+      // Autocomplete leaves its dropdown attached to <body>; drop it on unmount.
+      document.querySelectorAll(".pac-container").forEach((el) => el.remove());
+    };
+  }, [places]);
 
   return (
     <Input
@@ -56,14 +73,18 @@ function PlacesSearch({ onPick }: { onPick: (lat: number, lng: number, label: st
 
 function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
   const map = useMap();
+  // Ref pattern (see PlacesSearch): bind the click listener once per map, not
+  // once per render, so a fresh `onClick` closure doesn't re-subscribe.
+  const onClickRef = useRef(onClick);
+  onClickRef.current = onClick;
   useEffect(() => {
     if (!map) return;
     const listener = map.addListener("click", (e: google.maps.MapMouseEvent) => {
       if (!e.latLng) return;
-      onClick(e.latLng.lat(), e.latLng.lng());
+      onClickRef.current(e.latLng.lat(), e.latLng.lng());
     });
     return () => listener.remove();
-  }, [map, onClick]);
+  }, [map]);
   return null;
 }
 
@@ -135,7 +156,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
         Location
       </Label>
       <APIProvider apiKey={apiKey}>
-        <PlacesSearch onPick={(lat, lng, l) => commit(lat, lng, l)} />
+        <PlacesSearch onPick={commit} />
         <div className="h-64 w-full overflow-hidden rounded-lg border border-zinc-200">
           <Map
             mapId={MAP_ID}
@@ -144,8 +165,12 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
             gestureHandling="greedy"
             disableDefaultUI={false}
           >
-            <AdvancedMarker position={point} />
-            <MapClickHandler onClick={(lat, lng) => commit(lat, lng)} />
+            {MAP_ID ? (
+              <AdvancedMarker position={point} />
+            ) : (
+              <Marker position={point} />
+            )}
+            <MapClickHandler onClick={commit} />
             <MapRecenter lat={point.lat} lng={point.lng} />
             <ReverseGeocode lat={point.lat} lng={point.lng} onLabel={setLabel} />
           </Map>
