@@ -22,6 +22,23 @@ describe("Setup screen", () => {
     expect(JSON.parse(window.sessionStorage.getItem("ww_state")!).datasetId).toBe("demo");
   });
 
+  it("clears prior forecast/sourcing when a new dataset is loaded", async () => {
+    // Seed state as if a previous run already produced results.
+    renderWithWizard(<SetupPage />, {
+      initial: {
+        datasetId: "old",
+        forecast: { baseline_delta: 0.1, items: [{ item: "pork", forecast: 1, adjusted_qty: 1, reason: "" }] },
+        sourcing: { total: 9, savings: 1, lines: [] },
+      },
+    });
+    await userEvent.click(screen.getByRole("button", { name: /use demo dataset/i }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/forecast"));
+    const state = JSON.parse(window.sessionStorage.getItem("ww_state")!);
+    expect(state.datasetId).toBe("demo");
+    expect(state.forecast).toBeNull();
+    expect(state.sourcing).toBeNull();
+  });
+
   it("shows the backend error message on a 400 upload", async () => {
     vi.spyOn(api, "uploadCsv").mockRejectedValue(new api.ApiError(400, "CSV must contain columns"));
     renderWithWizard(<SetupPage />);
