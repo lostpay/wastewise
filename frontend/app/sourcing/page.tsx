@@ -9,6 +9,7 @@ import { PriceTable } from "@/components/price-table";
 import { StatTile } from "@/components/stat-tile";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function SourcingPage() {
   const router = useRouter();
@@ -34,7 +35,8 @@ export default function SourcingPage() {
       .finally(() => setLoading(false));
   }, [hydrated, forecast, location, sourcing, router, set]);
 
-  if (hydrated && !forecast) return null;
+  if (hydrated && !forecast)
+    return <RedirectNotice target="Forecast" reason="Run a forecast before sourcing suppliers." />;
 
   return (
     <div className="space-y-6">

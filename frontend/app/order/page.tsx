@@ -7,6 +7,7 @@ import { useWizard } from "@/lib/store";
 import { poToCsv } from "@/lib/csv";
 import { POTable } from "@/components/po-table";
 import { Button } from "@/components/ui/button";
+import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function OrderPage() {
   const router = useRouter();
@@ -19,7 +20,8 @@ export default function OrderPage() {
   }, [hydrated, sourcing, router]);
 
   if (!hydrated) return null;
-  if (!sourcing) return null;
+  if (!sourcing)
+    return <RedirectNotice target="Sourcing" reason="Pick suppliers before reviewing the purchase order." />;
 
   function download() {
     if (!sourcing) return;
