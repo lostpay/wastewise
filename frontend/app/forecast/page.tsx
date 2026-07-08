@@ -10,6 +10,7 @@ import { StatTile } from "@/components/stat-tile";
 import { ReasonBadge } from "@/components/reason-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function ForecastPage() {
   const router = useRouter();
@@ -34,7 +35,8 @@ export default function ForecastPage() {
       .finally(() => setLoading(false));
   }, [hydrated, datasetId, horizon, location, forecast, router, set]);
 
-  if (hydrated && !datasetId) return null;
+  if (hydrated && !datasetId)
+    return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
 
   return (
     <div className="space-y-6">

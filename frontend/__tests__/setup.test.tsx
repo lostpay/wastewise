@@ -42,7 +42,9 @@ describe("Setup screen", () => {
   it("shows the backend error message on a 400 upload", async () => {
     vi.spyOn(api, "uploadCsv").mockRejectedValue(new api.ApiError(400, "CSV must contain columns"));
     renderWithWizard(<SetupPage />);
-    const file = new File(["bad"], "bad.csv", { type: "text/csv" });
+    // Client-side validation checks the header row for required columns, so the
+    // file must at least have those to reach the backend where the mocked error fires.
+    const file = new File(["date,item,quantity\n2026-01-01,pork,1\n"], "bad.csv", { type: "text/csv" });
     await userEvent.upload(screen.getByLabelText(/sales csv/i), file);
     await userEvent.click(screen.getByRole("button", { name: /^upload$/i }));
     expect(await screen.findByText(/CSV must contain columns/i)).toBeInTheDocument();
