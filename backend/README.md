@@ -12,3 +12,10 @@ endpoint screenshots.
     cp .env.example .env   # fill in keys; point LLM_BASE_URL at vLLM or Fireworks
     uvicorn wastewise.api:app --reload
 Tests: `pytest -q`
+
+## Deployment
+Permanent API on Render via `render.yaml` (Track A, Fireworks LLM); AMD-GPU
+compute via vLLM on the notebook (Track B). Full steps, env vars, and free-tier
+caveats: [`../docs/DEPLOY.md`](../docs/DEPLOY.md).
+
+Hosted API: `https://wastewise-backend.onrender.com` <!-- update if the URL differs -->
