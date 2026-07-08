@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     kroger_client_secret: str = "changeme"
     db_path: str = "wastewise.sqlite3"
     cache_dir: str = "wastewise/data/cache"
+    # When true, the API refuses to start unless a live LLM answers the ping.
+    # Leave false in dev (loud warning only); flip on for the AMD submission demo.
+    llm_require_live: bool = False
 
 
 @lru_cache

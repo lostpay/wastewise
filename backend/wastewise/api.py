@@ -1,5 +1,7 @@
 # wastewise/api.py
 import re
+import sys
+from contextlib import asynccontextmanager
 from typing import Literal
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,9 +15,26 @@ from wastewise.adapters.weather_noaa import NOAAWeather
 from wastewise.adapters.holidays import USHolidays
 from wastewise.adapters.price_usda import USDAWholesale
 from wastewise.adapters.price_kroger import KrogerRetail
-from wastewise.agents.llm import LLMClient
+from wastewise.agents.llm import LLMClient, format_status_banner
 
-app = FastAPI(title="WasteWise")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Prove (or disprove) real inference at boot so a fallback-only run is never
+    # mistaken for the real thing. See wastewise/check_llm.py for the same check
+    # as a standalone command.
+    s = get_settings()
+    status = LLMClient(s.llm_base_url, s.llm_api_key, s.llm_model).ping()
+    print(format_status_banner(status), file=sys.stderr, flush=True)
+    if not status.live and s.llm_require_live:
+        raise RuntimeError(
+            "LLM_REQUIRE_LIVE is set but the LLM endpoint did not respond: "
+            f"{status.detail}"
+        )
+    yield
+
+
+app = FastAPI(title="WasteWise", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
                    allow_headers=["*"])
 
