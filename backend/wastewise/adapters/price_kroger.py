@@ -12,6 +12,8 @@ LOCATIONS_URL = "https://api.kroger.com/v1/locations"
 # needs a real locationId. This Cincinnati store is used as the fallback.
 DEFAULT_LOCATION_ID = "01400441"
 
+MAX_CANDIDATES = 5
+
 
 class KrogerRetail:
     def __init__(self, client_id: str, client_secret: str, cache: FileCache,
@@ -36,17 +38,16 @@ class KrogerRetail:
             resp = self.client.get(
                 PRODUCTS_URL,
                 headers={"Authorization": f"Bearer {token}"},
-                params={"filter.term": item, "filter.limit": 1,
+                params={"filter.term": item, "filter.limit": MAX_CANDIDATES,
                         "filter.locationId": location_id})
             resp.raise_for_status()
-            price = self._first_price(resp.json())
+            prices = self._parse_prices(resp.json())
         except httpx.HTTPError:
             return []
-        if price is None:
+        if not prices:
             return []
-        out = [SupplierPrice(supplier="Kroger", unit_price=price)]
-        self.cache.set(key, {"prices": [p.model_dump() for p in out]})
-        return out
+        self.cache.set(key, {"prices": [p.model_dump() for p in prices]})
+        return prices
 
     def _location_id(self, location: str) -> str:
         # Kroger prices are per-store, so resolve the request's "lat,lon" to the
@@ -89,10 +90,16 @@ class KrogerRetail:
         return self._token_value
 
     @staticmethod
-    def _first_price(payload: dict) -> float | None:
-        data = payload.get("data", [])
-        if not data or not data[0].get("items"):
-            return None
-        p = data[0]["items"][0].get("price", {})
-        val = p.get("promo") or p.get("regular")
-        return float(val) if val else None
+    def _parse_prices(payload: dict) -> list[SupplierPrice]:
+        out = []
+        for product in payload.get("data", []):
+            items = product.get("items") or []
+            if not items:
+                continue
+            p = items[0].get("price", {})
+            val = p.get("promo") or p.get("regular")
+            if not val:
+                continue
+            out.append(SupplierPrice(supplier="Kroger", unit_price=float(val),
+                                     description=str(product.get("description") or "")))
+        return out
