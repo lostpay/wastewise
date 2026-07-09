@@ -1,4 +1,5 @@
 # tests/test_sourcing.py
+import json
 from wastewise.models import SupplierPrice
 from wastewise.agents.sourcing import source_order, NO_BENCHMARK_NOTE, NO_MATCH_NOTE
 
@@ -64,3 +65,56 @@ def test_source_order_still_falls_back_to_market_when_benchmark_exists():
                         _Wholesale(), _NoRetail(), _FakeLLM(), "loc")
     assert resp.lines[0].supplier == "Market"
     assert resp.lines[0].unit_price == 2.0
+
+
+class _MultiRetail:
+    def get_retail_prices(self, item, location):
+        return [
+            SupplierPrice(supplier="Kroger", unit_price=10.0,
+                         description="Private Selection Marinated Chicken Thighs"),
+            SupplierPrice(supplier="Kroger", unit_price=4.5,
+                         description="Kroger Chicken Breast"),
+        ]
+
+
+class _SelectingLLM:
+    """Simulates the model picking the plain (index 1) option over the
+    marinated one, and explaining why."""
+    def complete(self, system, user):
+        return json.dumps({"index": 1, "reason": "Plain cut, well under benchmark."})
+
+
+def test_source_order_uses_llm_to_pick_best_candidate_not_just_cheapest_index0():
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetail(), _SelectingLLM(), "loc")
+    line = resp.lines[0]
+    assert line.unit_price == 4.5
+    assert line.note == "Plain cut, well under benchmark."
+
+
+class _MalformedLLM:
+    def complete(self, system, user):
+        return "not json at all"
+
+
+def test_source_order_falls_back_to_cheapest_when_llm_output_unusable():
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetail(), _MalformedLLM(), "loc")
+    line = resp.lines[0]
+    assert line.unit_price == 4.5  # still the cheapest candidate
+    # _Wholesale's benchmark (2.0) is below the cheapest candidate (4.5), so the
+    # deterministic fallback note is honestly "at or above", not "under" -- the
+    # brief's literal assertion ("under market benchmark") was inconsistent with
+    # its own fixtures (see report for details).
+    assert line.note == "At or above market benchmark."
+
+
+class _OutOfRangeLLM:
+    def complete(self, system, user):
+        return json.dumps({"index": 99, "reason": "bad index"})
+
+
+def test_source_order_falls_back_when_llm_picks_out_of_range_index():
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetail(), _OutOfRangeLLM(), "loc")
+    assert resp.lines[0].unit_price == 4.5
