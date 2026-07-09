@@ -15,6 +15,8 @@ from wastewise.adapters.weather_noaa import NOAAWeather
 from wastewise.adapters.holidays import USHolidays
 from wastewise.adapters.price_usda import USDAWholesale
 from wastewise.adapters.price_kroger import KrogerRetail
+from wastewise.adapters.price_historical import (
+    HistoricalPriceSource, FallbackWholesale, FallbackRetail)
 from wastewise.agents.llm import LLMClient, format_status_banner
 
 
@@ -80,6 +82,7 @@ class SourcingItem(BaseModel):
 
 class SourcingRequest(_LocatedRequest):
     items: list[SourcingItem]
+    dataset_id: str | None = None
 
 
 @app.get("/health")
@@ -113,5 +116,14 @@ def forecast(req: ForecastRequest, deps: dict = Depends(get_deps)):
 
 @app.post("/sourcing")
 def sourcing(req: SourcingRequest, deps: dict = Depends(get_deps)):
+    wholesale, retail = deps["wholesale"], deps["retail"]
+    if req.dataset_id:
+        try:
+            records = deps["store"].load(req.dataset_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="dataset not found")
+        historical = HistoricalPriceSource(records)
+        wholesale = FallbackWholesale(wholesale, historical)
+        retail = FallbackRetail(retail, historical)
     return run_sourcing([i.model_dump() for i in req.items], req.location,
-                        deps["wholesale"], deps["retail"], deps["llm"])
+                        wholesale, retail, deps["llm"])

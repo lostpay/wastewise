@@ -75,3 +75,41 @@ def test_upload_rejects_non_utf8(tmp_path):
                     io.BytesIO(b"\xff\xfe\x00bad"), "text/csv")})
     assert r.status_code == 400
     api.app.dependency_overrides.clear()
+
+
+def test_sourcing_falls_back_to_historical_price_for_unmatched_item(tmp_path):
+    from wastewise.storage import DatasetStore
+
+    class _NoMatchWholesale:
+        def get_wholesale_price(self, item): return None
+
+    class _NoMatchRetail:
+        def get_retail_prices(self, item, location): return []
+
+    deps = {"store": DatasetStore(str(tmp_path / "db.sqlite3")),
+            "weather": _Weather(), "holidays": _Holidays(),
+            "wholesale": _NoMatchWholesale(), "retail": _NoMatchRetail(), "llm": _LLM()}
+    api.app.dependency_overrides[api.get_deps] = lambda: deps
+    client = TestClient(api.app)
+
+    csv = ("date,item,quantity,price\n"
+           "2026-04-01,mutton,2,600\n"
+           "2026-04-02,mutton,1.8,620\n")
+    r = client.post("/upload", files={"file": ("s.csv", io.BytesIO(csv.encode()), "text/csv")})
+    ds_id = r.json()["dataset_id"]
+
+    s = client.post("/sourcing", json={"items": [{"item": "mutton", "qty": 5}],
+                    "location": "40.7,-74.0", "dataset_id": ds_id})
+    assert s.status_code == 200
+    line = s.json()["lines"][0]
+    assert line["supplier"] == "Historical average"
+    assert line["unit_price"] == 610.0
+    api.app.dependency_overrides.clear()
+
+
+def test_sourcing_dataset_id_404_when_unknown(tmp_path):
+    client = _client(tmp_path)
+    r = client.post("/sourcing", json={"items": [{"item": "mutton", "qty": 5}],
+                    "location": "40.7,-74.0", "dataset_id": "does-not-exist"})
+    assert r.status_code == 404
+    api.app.dependency_overrides.clear()
