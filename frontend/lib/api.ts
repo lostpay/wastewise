@@ -44,6 +44,10 @@ export function runForecast(datasetId: string, horizon: Horizon, location: strin
   return call("/forecast", jsonInit({ dataset_id: datasetId, horizon, location }), DEMO_FORECAST);
 }
 
-export function runSourcing(items: { item: string; qty: number }[], location: string): Promise<SourcingResponse> {
-  return call("/sourcing", jsonInit({ items, location }), DEMO_SOURCING);
+export function runSourcing(
+  items: { item: string; qty: number }[],
+  location: string,
+  datasetId?: string | null,
+): Promise<SourcingResponse> {
+  return call("/sourcing", jsonInit({ items, location, dataset_id: datasetId ?? undefined }), DEMO_SOURCING);
 }

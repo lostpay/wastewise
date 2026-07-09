@@ -15,6 +15,9 @@ Tests: `npm test`
 If `NEXT_PUBLIC_API_URL` is unset (or you click "Use demo dataset"), the app
 serves pre-captured responses so the full flow works with no backend. This is
 why the hosted URL stays live even when the AMD Cloud backend is offline.
+Two demo datasets exist on the backend: the small US-item one exercises the
+full pipeline including sourcing; the larger one shows a real forecast-vs-baseline
+improvement but should not be used for the sourcing step (non-US items).
 
 ## Backend
 Runs the two LLM judgment steps on an AMD Radeon PRO W7900 via vLLM — see

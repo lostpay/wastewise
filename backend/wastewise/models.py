@@ -66,3 +66,4 @@ class Holiday(BaseModel):
 class SupplierPrice(BaseModel):
     supplier: str
     unit_price: float
+    description: str = ""
