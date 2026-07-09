@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/lostpay/wastewise.git}"
-MODEL="${MODEL:-meta-llama/Llama-3.1-8B-Instruct}"
+MODEL="${MODEL:-mistralai/Mistral-7B-Instruct-v0.3}"
 VLLM_PORT="${VLLM_PORT:-8000}"
 API_PORT="${API_PORT:-8080}"
 WORKDIR="${WORKDIR:-$HOME/wastewise}"
