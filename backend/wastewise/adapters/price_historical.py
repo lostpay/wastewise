@@ -10,6 +10,7 @@ benchmark: the historical average of that item's own `price` column.
 from collections import defaultdict
 import statistics
 
+from wastewise.adapters.base import RetailSource, WholesaleSource
 from wastewise.models import SalesRecord, SupplierPrice
 
 HISTORICAL_SUPPLIER = "Historical average"
@@ -49,7 +50,7 @@ class FallbackWholesale:
     """Tries `primary` first; falls back to `secondary` only when primary
     has no answer (`None`), never overrides a real primary result."""
 
-    def __init__(self, primary, secondary):
+    def __init__(self, primary: WholesaleSource, secondary: WholesaleSource):
         self.primary, self.secondary = primary, secondary
 
     def get_wholesale_price(self, item: str) -> float | None:
@@ -58,7 +59,7 @@ class FallbackWholesale:
 
 
 class FallbackRetail:
-    def __init__(self, primary, secondary):
+    def __init__(self, primary: RetailSource, secondary: RetailSource):
         self.primary, self.secondary = primary, secondary
 
     def get_retail_prices(self, item: str, location: str) -> list[SupplierPrice]:

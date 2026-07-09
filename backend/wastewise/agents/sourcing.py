@@ -1,25 +1,25 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from wastewise.models import POLine, SourcingResponse
+from wastewise.models import POLine, SourcingResponse, SupplierPrice
 from wastewise.agents.llm import extract_json
 
 SELECT_SYSTEM = (
     "You are a restaurant purchasing agent choosing which supplier listing to buy "
-    "for a bulk kitchen order. Given a plain ingredient name, a market wholesale "
-    "benchmark price (or 'none' if unavailable), and a numbered list of candidate "
+    "for a bulk kitchen order. Given a plain ingredient name, a reference price "
+    "(or 'none' if unavailable), and a numbered list of candidate "
     "retail listings (each with a description and unit price), pick the listing "
     "that is the plain, unprocessed commodity form of the ingredient -- not a "
     "marinated, seasoned, or specialty product -- at the best price. Respond ONLY "
     'with JSON: {"index": int, "reason": str}. "index" is the 0-based position '
     'in the candidate list. "reason" is one short English sentence explaining the '
-    "choice. If the benchmark is 'none', do NOT claim or imply a benchmark "
-    "comparison (e.g. never say 'under benchmark' or 'at or above benchmark') -- "
-    "explain the choice in terms of the listing itself (e.g. plain cut vs. "
-    "specialty, or lowest price among candidates) instead."
+    "choice. If the reference price is 'none', do NOT claim or imply a reference "
+    "price comparison (e.g. never say 'under reference price' or 'at or above "
+    "reference price') -- explain the choice in terms of the listing itself (e.g. "
+    "plain cut vs. specialty, or lowest price among candidates) instead."
 )
 
-NO_BENCHMARK_NOTE = "No market benchmark available for comparison."
-NO_MATCH_NOTE = "No retail listing or market benchmark found for this item."
+NO_BENCHMARK_NOTE = "No reference price available for comparison."
+NO_MATCH_NOTE = "No retail listing or reference price found for this item."
 
 
 def _fallback_note(unit_price: float, benchmark: float | None) -> str:
@@ -27,11 +27,12 @@ def _fallback_note(unit_price: float, benchmark: float | None) -> str:
         return NO_BENCHMARK_NOTE
     if unit_price < benchmark:
         pct = round((benchmark - unit_price) / benchmark * 100)
-        return f"{pct}% under market benchmark."
-    return "At or above market benchmark."
+        return f"{pct}% under reference price."
+    return "At or above reference price."
 
 
-def _choose_offer(llm, item: str, offers: list, benchmark: float | None):
+def _choose_offer(llm, item: str, offers: list[SupplierPrice],
+                  benchmark: float | None) -> tuple[SupplierPrice, str]:
     """Ask the LLM to pick the best candidate + explain; fall back to the
     cheapest offer with a formulaic note if the LLM is unavailable or
     returns something unusable. `offers` must be non-empty."""
@@ -71,6 +72,9 @@ def source_order(items: list[dict], wholesale, retail, llm,
             return None, _fallback_note(benchmark, benchmark)
         return None, NO_MATCH_NOTE
 
+    # Choosing an offer and writing its note is an independent LLM call per
+    # item -- run them concurrently instead of one at a time, since each
+    # round trip dominates wall time otherwise.
     with ThreadPoolExecutor(max_workers=min(8, len(prepared)) or 1) as pool:
         resolved = list(pool.map(_resolve, prepared))
 

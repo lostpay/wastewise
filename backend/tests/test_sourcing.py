@@ -104,9 +104,9 @@ def test_source_order_falls_back_to_cheapest_when_llm_output_unusable():
     assert line.unit_price == 4.5  # still the cheapest candidate
     # _Wholesale's benchmark (2.0) is below the cheapest candidate (4.5), so the
     # deterministic fallback note is honestly "at or above", not "under" -- the
-    # brief's literal assertion ("under market benchmark") was inconsistent with
+    # brief's literal assertion ("under reference price") was inconsistent with
     # its own fixtures (see report for details).
-    assert line.note == "At or above market benchmark."
+    assert line.note == "At or above reference price."
 
 
 class _OutOfRangeLLM:
