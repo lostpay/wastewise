@@ -1,5 +1,11 @@
 # AMD Compute Usage
 
+> Before the final submission run: set `LLM_REQUIRE_LIVE=true` in the AMD
+> box's env so the API refuses to boot on a dead vLLM endpoint instead of
+> silently serving fallback text (see `backend/wastewise/config.py`). Also
+> run `python -m wastewise.check_data_sources` once to confirm USDA/Kroger
+> credentials are live before recording the demo video.
+
 WasteWise runs both LLM judgment steps (demand adjustment + sourcing notes) on an
 open model served by **vLLM on an AMD Radeon PRO W7900 (48 GB VRAM, RDNA3/gfx1100,
 ROCm)** via an OpenAI-compatible endpoint, on the AMD Developer Cloud notebook
