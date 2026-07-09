@@ -11,7 +11,7 @@ function SupplierCell({ supplier }: { supplier: string }) {
       >
         <span
           className={`h-1.5 w-1.5 ${
-            isFallback ? "bg-muted-foreground" : "bg-[color:var(--accent)]"
+            isFallback ? "bg-muted-foreground" : "bg-accent"
           }`}
         />
         {isFallback ? "No live offer" : supplier}
@@ -50,7 +50,7 @@ export function PriceTable({ lines }: { lines: POLine[] }) {
     <div>
       <table className="w-full">
         <thead>
-          <tr className="border-b-2 border-foreground/60 bg-[color:var(--muted)]">
+          <tr className="border-b-2 border-foreground/60 bg-muted">
             <th className="ww-label px-4 py-2 text-left">Item</th>
             <th className="ww-label px-4 py-2 text-left">Supplier</th>
             <th className="ww-label px-4 py-2 text-right">Unit price</th>
@@ -75,7 +75,7 @@ export function PriceTable({ lines }: { lines: POLine[] }) {
           ))}
         </tbody>
       </table>
-      <div className="border-t border-foreground/15 bg-[color:var(--muted)]/40 px-4 py-3">
+      <div className="border-t border-foreground/15 bg-muted/40 px-4 py-3">
         <p className="ww-label mb-1">§ Legend</p>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           <span className="ww-label text-foreground">Kroger</span> rows are live

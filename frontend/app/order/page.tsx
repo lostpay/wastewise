@@ -44,7 +44,7 @@ export default function OrderPage() {
       </Link>
 
       <div>
-        <p className="ww-label text-[color:var(--accent)]">§ IV &mdash; Order</p>
+        <p className="ww-label text-accent">§ IV &mdash; Order</p>
         <h2 className="font-heading mt-1 text-3xl font-semibold">
           Purchase Order
         </h2>
@@ -67,8 +67,8 @@ export default function OrderPage() {
           disabled={approved}
           className={
             approved
-              ? "bg-[color:var(--accent)] text-accent-foreground"
-              : "bg-[color:var(--accent)] text-accent-foreground hover:bg-[color:var(--accent)]/85"
+              ? "bg-accent text-accent-foreground"
+              : "bg-accent text-accent-foreground hover:bg-accent/85"
           }
         >
           {approved ? "Approved ✓" : "Approve"}

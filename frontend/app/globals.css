@@ -149,6 +149,9 @@
     letter-spacing: 0.14em;
     font-size: 10px;
     font-weight: 500;
+  }
+  /* Default color; override with any Tailwind text-* class next to it. */
+  .ww-label:not([class*="text-"]) {
     color: var(--muted-foreground);
   }
   .ww-num {

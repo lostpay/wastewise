@@ -10,8 +10,8 @@ export function ReasonBadge({ reason }: { reason: string }) {
     );
   }
   return (
-    <span className="flex max-w-full items-start gap-2 border-l-2 border-[color:var(--accent)] pl-2 text-left text-[11px] leading-snug">
-      <span className="ww-label text-[color:var(--accent)]">AI</span>
+    <span className="flex max-w-full items-start gap-2 border-l-2 border-accent pl-2 text-left text-[11px] leading-snug">
+      <span className="ww-label text-accent">AI</span>
       <span className="text-foreground">{reason}</span>
     </span>
   );

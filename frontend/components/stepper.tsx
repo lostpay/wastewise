@@ -58,7 +58,7 @@ export function Stepper({ current }: { current?: number } = {}) {
                     isActive
                       ? "text-background/80"
                       : isDone
-                        ? "text-[color:var(--accent)]"
+                        ? "text-accent"
                         : "text-muted-foreground"
                   }`}
                 >

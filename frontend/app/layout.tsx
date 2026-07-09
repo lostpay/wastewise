@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </span>
                 <span className="h-3 w-px bg-foreground/30" />
                 <span className="inline-flex items-center gap-1.5 border border-foreground/25 px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest text-foreground">
-                  <span className="h-1.5 w-1.5 bg-[color:var(--accent)]" />
+                  <span className="h-1.5 w-1.5 bg-accent" />
                   Live
                 </span>
               </div>
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </header>
 
           <div className="mx-auto flex w-full max-w-6xl flex-col items-start gap-0 px-4 py-8 md:flex-row md:px-6 md:py-10">
-            <aside className="w-full shrink-0 border border-foreground/20 bg-[color:var(--sidebar)] p-5 md:sticky md:top-8 md:w-64">
+            <aside className="w-full shrink-0 border border-foreground/20 bg-sidebar p-5 md:sticky md:top-8 md:w-64">
               <Stepper />
             </aside>
 

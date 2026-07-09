@@ -74,7 +74,7 @@ export default function SetupPage() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="ww-label text-[color:var(--accent)]">§ I &mdash; Setup</p>
+        <p className="ww-label text-accent">§ I &mdash; Setup</p>
         <h2 className="font-heading mt-1 text-3xl font-semibold">
           Dataset Setup
         </h2>
@@ -102,7 +102,7 @@ export default function SetupPage() {
         </Label>
         <select
           id="horizon"
-          className="ww-num h-9 w-full border border-foreground/25 bg-card px-3 text-sm focus:border-[color:var(--accent)] focus:outline-none"
+          className="ww-num h-9 w-full border border-foreground/25 bg-card px-3 text-sm focus:border-accent focus:outline-none"
           value={horizon}
           onChange={(e) => set({ horizon: e.target.value as Horizon })}
         >

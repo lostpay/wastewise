@@ -4,7 +4,7 @@ export function POTable({ lines, total }: { lines: POLine[]; total: number }) {
   return (
     <table className="w-full">
       <thead>
-        <tr className="border-b-2 border-foreground/60 bg-[color:var(--muted)]">
+        <tr className="border-b-2 border-foreground/60 bg-muted">
           <th className="ww-label px-4 py-2 text-left">Item</th>
           <th className="ww-label px-4 py-2 text-right">Qty</th>
           <th className="ww-label px-4 py-2 text-left">Supplier</th>
@@ -37,7 +37,7 @@ export function POTable({ lines, total }: { lines: POLine[]; total: number }) {
         ))}
       </tbody>
       <tfoot>
-        <tr className="border-t-2 border-double border-foreground/60 bg-[color:var(--muted)]">
+        <tr className="border-t-2 border-double border-foreground/60 bg-muted">
           <td colSpan={4} className="ww-label px-4 py-3">
             Grand total
           </td>

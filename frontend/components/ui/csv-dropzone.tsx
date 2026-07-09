@@ -105,7 +105,7 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
         <button
           type="button"
           onClick={downloadSample}
-          className="ww-label text-[color:var(--accent)] hover:underline"
+          className="ww-label text-accent hover:underline"
         >
           Download sample &darr;
         </button>
@@ -128,10 +128,10 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
         className={cn(
           "group relative flex cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 py-10 text-center transition-colors",
           dragging
-            ? "border-[color:var(--accent)] bg-[color:var(--accent)]/8"
+            ? "border-accent bg-accent/8"
             : value
-              ? "border-foreground/60 bg-[color:var(--muted)]"
-              : "border-foreground/25 bg-card hover:border-foreground/50 hover:bg-[color:var(--muted)]/50",
+              ? "border-foreground/60 bg-muted"
+              : "border-foreground/25 bg-card hover:border-foreground/50 hover:bg-muted/50",
           disabled && "pointer-events-none opacity-60",
         )}
       >
@@ -176,7 +176,7 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
             </div>
             <p className="mt-4 text-sm">
               Drop your CSV here or{" "}
-              <span className="font-medium text-[color:var(--accent)] underline underline-offset-4">
+              <span className="font-medium text-accent underline underline-offset-4">
                 browse
               </span>
             </p>

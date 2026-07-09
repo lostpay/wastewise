@@ -48,7 +48,7 @@ export default function SourcingPage() {
       </Link>
 
       <div>
-        <p className="ww-label text-[color:var(--accent)]">§ III &mdash; Sourcing</p>
+        <p className="ww-label text-accent">§ III &mdash; Sourcing</p>
         <h2 className="font-heading mt-1 text-3xl font-semibold">
           Smart Sourcing
         </h2>

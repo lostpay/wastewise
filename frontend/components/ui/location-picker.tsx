@@ -144,7 +144,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
           className="ww-num border-foreground/25 bg-card"
         />
         <p className="ww-num text-[11px] text-muted-foreground">
-          Set <code className="bg-[color:var(--muted)] px-1 py-0.5">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in .env.local to enable the map picker.
+          Set <code className="bg-muted px-1 py-0.5">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in .env.local to enable the map picker.
         </p>
       </div>
     );

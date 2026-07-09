@@ -48,7 +48,7 @@ export default function ForecastPage() {
       </Link>
 
       <div>
-        <p className="ww-label text-[color:var(--accent)]">§ II &mdash; Forecast</p>
+        <p className="ww-label text-accent">§ II &mdash; Forecast</p>
         <h2 className="font-heading mt-1 text-3xl font-semibold">
           Predictive Forecast
         </h2>
@@ -78,10 +78,10 @@ export default function ForecastPage() {
               <p className="ww-label">Fig. 1 — Per-item quantities</p>
               <div className="ww-num flex items-center gap-4 text-[10px] text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 bg-[color:var(--chart-3)]" /> Model
+                  <span className="h-2 w-2 bg-chart-3" /> Model
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 bg-[color:var(--foreground)]" /> Recommended
+                  <span className="h-2 w-2 bg-foreground" /> Recommended
                 </span>
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function ForecastPage() {
           <div>
             <p className="ww-label mb-2">Tbl. 1 — Per-item detail</p>
             <div className="border border-foreground/20">
-              <div className="grid grid-cols-[1fr_5rem_5rem_5rem_1fr] items-center gap-4 border-b-2 border-foreground/60 bg-[color:var(--muted)] px-3 py-2">
+              <div className="grid grid-cols-[1fr_5rem_5rem_5rem_1fr] items-center gap-4 border-b-2 border-foreground/60 bg-muted px-3 py-2">
                 <span className="ww-label">Item</span>
                 <span className="ww-label text-right">Model</span>
                 <span className="ww-label text-right">Rec.</span>
@@ -104,11 +104,15 @@ export default function ForecastPage() {
                   const delta = it.adjusted_qty - it.forecast;
                   const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
                   const sign = delta > 0 ? "+" : "";
+                  // Down = saved-from-waste (green). Up = justified extra
+                  // spend (amber). Zero = muted. Deliberately not "up=good"
+                  // — this is a waste-reduction app, so shrinking a
+                  // purchase is the product's success state.
                   const deltaColor =
-                    delta > 0
-                      ? "text-[color:var(--accent)]"
-                      : delta < 0
-                        ? "text-destructive"
+                    delta < 0
+                      ? "text-emerald-700"
+                      : delta > 0
+                        ? "text-amber-700"
                         : "text-muted-foreground";
                   return (
                     <li
