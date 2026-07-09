@@ -55,7 +55,8 @@ export default function SourcingPage() {
           Smart Sourcing
         </h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Best supplier per item, benchmarked against wholesale market prices.
+          Live Kroger retail prices for each item, benchmarked against the
+          US retail average from the Bureau of Labor Statistics (via FRED).
         </p>
       </div>
 
@@ -68,8 +69,9 @@ export default function SourcingPage() {
       ) : (
         <>
           <StatTile
-            label="Estimated savings vs. market"
+            label="Estimated savings vs. US retail average"
             value={`$${sourcing.savings.toFixed(2)}`}
+            hint="Sum of (BLS benchmark − Kroger price) × qty for items where Kroger beats the benchmark."
           />
           <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white">
             <PriceTable lines={sourcing.lines} />
