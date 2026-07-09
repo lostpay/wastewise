@@ -1,7 +1,24 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans, IBM_Plex_Mono, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import { WizardProvider } from "@/lib/store";
 import { Stepper } from "@/components/stepper";
+
+const sans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-sans",
+});
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
+});
+const serif = IBM_Plex_Serif({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-heading",
+});
 
 export const metadata: Metadata = {
   title: "WasteWise",
@@ -10,40 +27,51 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-[#FAF9F6] text-zinc-900 antialiased selection:bg-emerald-100">
+    <html lang="en" className={`${sans.variable} ${mono.variable} ${serif.variable}`}>
+      <body className="min-h-screen antialiased">
         <WizardProvider>
-          <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-md">
-            <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900 font-serif text-sm font-bold tracking-tighter text-white">
-                  W
-                </div>
-                <div>
-                  <h1 className="text-base font-bold tracking-tight text-zinc-900">WasteWise</h1>
-                  <p className="-mt-0.5 hidden text-[11px] font-medium tracking-tight text-zinc-400 sm:block">
-                    Autonomous Procurement Infrastructure
-                  </p>
-                </div>
+          <header className="border-b border-foreground/20 bg-background">
+            <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+              <div className="flex items-baseline gap-3">
+                <span className="ww-num text-[10px] tracking-[0.2em] text-muted-foreground">
+                  DOC-01
+                </span>
+                <span className="h-3 w-px bg-foreground/30" />
+                <h1 className="font-heading text-lg font-semibold tracking-tight">
+                  WasteWise
+                </h1>
+                <span className="ww-label hidden sm:inline">
+                  Purchasing Advisory
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/50 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                  Engine Online
+                <span className="ww-num text-[10px] text-muted-foreground">
+                  {new Date().toISOString().slice(0, 10)}
+                </span>
+                <span className="h-3 w-px bg-foreground/30" />
+                <span className="inline-flex items-center gap-1.5 border border-foreground/25 px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest text-foreground">
+                  <span className="h-1.5 w-1.5 bg-[color:var(--accent)]" />
+                  Live
                 </span>
               </div>
             </div>
           </header>
 
-          <div className="mx-auto flex w-full max-w-7xl flex-col items-start gap-8 px-4 py-6 md:flex-row md:px-6 md:py-10">
-            <aside className="w-full shrink-0 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] md:sticky md:top-24 md:w-64">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-start gap-0 px-4 py-8 md:flex-row md:px-6 md:py-10">
+            <aside className="w-full shrink-0 border border-foreground/20 bg-[color:var(--sidebar)] p-5 md:sticky md:top-8 md:w-64">
               <Stepper />
             </aside>
 
-            <main className="min-h-[500px] w-full flex-1 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300">
+            <main className="min-h-[500px] w-full flex-1 border border-foreground/20 border-t-0 bg-card md:border-l-0 md:border-t">
               <div className="p-6 md:p-8">{children}</div>
             </main>
           </div>
+
+          <footer className="mx-auto max-w-6xl px-6 pb-10 text-center">
+            <p className="ww-num text-[10px] tracking-[0.2em] text-muted-foreground">
+              &mdash; END OF DOCUMENT &mdash;
+            </p>
+          </footer>
         </WizardProvider>
       </body>
     </html>

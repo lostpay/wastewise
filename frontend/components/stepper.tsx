@@ -13,16 +13,13 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { key: "setup", label: "Setup", description: "Initialize demand engines", href: "/setup" },
-  { key: "forecast", label: "Forecast", description: "Analyze upcoming demand", href: "/forecast" },
-  { key: "sourcing", label: "Sourcing", description: "Optimize supplier routes", href: "/sourcing" },
-  { key: "order", label: "Order", description: "Review and dispatch orders", href: "/order" },
+  { key: "setup", label: "Setup", description: "Load history & location", href: "/setup" },
+  { key: "forecast", label: "Forecast", description: "Predict demand", href: "/forecast" },
+  { key: "sourcing", label: "Sourcing", description: "Compare prices", href: "/sourcing" },
+  { key: "order", label: "Order", description: "Approve & export", href: "/order" },
 ];
 
 export function Stepper({ current }: { current?: number } = {}) {
-  // Stepper is used both inside the wizard (with context) and in isolated tests
-  // (without). Tolerate the missing provider so `<Stepper current={0} />` still
-  // renders — the sidebar just runs with defaults.
   const wizard = useContext(WizardContext);
   const pathname = usePathname();
   const horizon = wizard?.horizon;
@@ -31,73 +28,68 @@ export function Stepper({ current }: { current?: number } = {}) {
   const forecast = wizard?.forecast ?? null;
   const sourcing = wizard?.sourcing ?? null;
 
-  // A step is jumpable back to only if we've already collected the state that
-  // downstream guards require (see each page's redirect in useEffect).
   const maxReached = sourcing ? 3 : forecast ? 2 : datasetId ? 1 : 0;
-
   const routeIdx = STEPS.findIndex((s) => s.href === pathname);
   const currentIdx = typeof current === "number" ? current : routeIdx >= 0 ? routeIdx : 0;
 
   return (
-    <nav aria-label="Progress" className="flex h-full flex-col justify-between py-2">
+    <nav aria-label="Progress" className="flex h-full flex-col justify-between">
       <div>
-        <p className="mb-6 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-          Workflow Pipeline
-        </p>
-        <ol className="relative ml-2 space-y-6 border-l border-zinc-200/80">
+        <p className="ww-label mb-4">§ Procedure</p>
+        <ol className="space-y-0 border-t border-foreground/15">
           {STEPS.map((s, i) => {
             const isActive = i === currentIdx;
             const isDone = i < currentIdx;
             const canJump = i <= maxReached && !isActive;
+            const num = String(i + 1).padStart(2, "0");
 
-            const dot = (
-              <span
-                className={`absolute -left-[5px] top-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full transition-all duration-300 ${
+            const inner = (
+              <div
+                className={`group flex items-start gap-3 border-b border-foreground/15 py-3 pl-3 pr-2 transition-colors ${
                   isActive
-                    ? "scale-110 bg-emerald-700 ring-4 ring-emerald-100"
-                    : isDone
-                      ? "bg-emerald-600"
-                      : "bg-zinc-200 group-hover:bg-zinc-300"
+                    ? "bg-foreground text-background"
+                    : canJump
+                      ? "hover:bg-foreground/5"
+                      : ""
                 }`}
-              />
-            );
-
-            const body = (
-              <div className="flex flex-col">
+              >
                 <span
-                  className={`text-xs font-semibold tracking-tight transition-colors ${
+                  className={`ww-num text-[11px] leading-none ${
                     isActive
-                      ? "font-bold text-zinc-900"
+                      ? "text-background/80"
                       : isDone
-                        ? "text-zinc-600"
-                        : "text-zinc-400"
+                        ? "text-[color:var(--accent)]"
+                        : "text-muted-foreground"
                   }`}
                 >
-                  {s.label}
+                  {isDone ? "✓" : num}
                 </span>
-                <span className="mt-0.5 hidden text-[11px] leading-snug text-zinc-400 md:block">
-                  {s.description}
-                </span>
+                <div className="flex-1">
+                  <p
+                    className={`text-sm font-medium tracking-tight ${
+                      isActive
+                        ? "text-background"
+                        : isDone
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {s.label}
+                  </p>
+                  <p
+                    className={`mt-0.5 text-[11px] leading-snug ${
+                      isActive ? "text-background/70" : "text-muted-foreground"
+                    }`}
+                  >
+                    {s.description}
+                  </p>
+                </div>
               </div>
             );
 
             return (
-              <li
-                key={s.key}
-                aria-current={isActive ? "step" : undefined}
-                className="group relative mb-0 pl-6"
-              >
-                {dot}
-                {canJump ? (
-                  <Link
-                    href={s.href}
-                    className="-ml-1 block rounded-md py-0.5 pl-1 transition-colors hover:bg-zinc-50"
-                  >
-                    {body}
-                  </Link>
-                ) : (
-                  <div className="py-0.5">{body}</div>
-                )}
+              <li key={s.key} aria-current={isActive ? "step" : undefined}>
+                {canJump ? <Link href={s.href}>{inner}</Link> : inner}
               </li>
             );
           })}
@@ -105,26 +97,28 @@ export function Stepper({ current }: { current?: number } = {}) {
       </div>
 
       {(datasetId || horizon || location) && (
-        <div className="mt-8 hidden space-y-2.5 border-t border-zinc-200/60 pt-6 text-[11px] text-zinc-500 md:block">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">
-            Active Parameters
-          </p>
-          {horizon && (
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-400">Horizon:</span>
-              <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono capitalize text-zinc-700">
-                {horizon}
-              </span>
-            </div>
-          )}
-          {location && (
-            <div className="flex items-start justify-between">
-              <span className="text-zinc-400">Coordinates:</span>
-              <span className="max-w-[120px] truncate text-right font-mono text-zinc-700">
-                {location}
-              </span>
-            </div>
-          )}
+        <div className="mt-8 hidden border-t border-foreground/15 pt-4 md:block">
+          <p className="ww-label mb-3">§ Parameters</p>
+          <dl className="space-y-2 text-[11px]">
+            {horizon && (
+              <div className="flex items-baseline justify-between gap-2">
+                <dt className="ww-label text-muted-foreground">Horizon</dt>
+                <dd className="ww-num capitalize">{horizon}</dd>
+              </div>
+            )}
+            {location && (
+              <div className="flex items-baseline justify-between gap-2">
+                <dt className="ww-label text-muted-foreground">Coords</dt>
+                <dd className="ww-num max-w-[130px] truncate text-right">{location}</dd>
+              </div>
+            )}
+            {datasetId && (
+              <div className="flex items-baseline justify-between gap-2">
+                <dt className="ww-label text-muted-foreground">Dataset</dt>
+                <dd className="ww-num max-w-[130px] truncate text-right">{datasetId.slice(0, 8)}</dd>
+              </div>
+            )}
+          </dl>
         </div>
       )}
     </nav>

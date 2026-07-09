@@ -39,22 +39,21 @@ export default function ForecastPage() {
     return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         href="/setup"
-        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+        className="ww-num inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
       >
-        <span aria-hidden>&larr;</span> Back to Setup
+        <span aria-hidden>&larr;</span> back to setup
       </Link>
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-          Step 2
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+        <p className="ww-label text-[color:var(--accent)]">§ II &mdash; Forecast</p>
+        <h2 className="font-heading mt-1 text-3xl font-semibold">
           Predictive Forecast
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <div className="ww-rule mt-3 w-full text-foreground/40" />
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Per-item demand for the next {horizon}. The base model predicts sales
           from your history; an LLM then nudges each quantity up or down for
           weather and public holidays.
@@ -62,11 +61,11 @@ export default function ForecastPage() {
       </div>
 
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : loading || !forecast ? (
-        <Skeleton className="h-80 w-full rounded-xl" />
+        <Skeleton className="h-80 w-full" />
       ) : (
         <>
           <StatTile
@@ -74,64 +73,82 @@ export default function ForecastPage() {
             value={`${Math.round(forecast.baseline_delta * 100)}%`}
             hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Higher is better."
           />
-          <div className="rounded-xl border border-zinc-200/80 bg-white p-4">
-            <ForecastChart items={forecast.items} />
+          <div className="border border-foreground/20 bg-card">
+            <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
+              <p className="ww-label">Fig. 1 — Per-item quantities</p>
+              <div className="ww-num flex items-center gap-4 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 bg-[color:var(--chart-3)]" /> Model
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 bg-[color:var(--foreground)]" /> Recommended
+                </span>
+              </div>
+            </div>
+            <div className="p-4">
+              <ForecastChart items={forecast.items} />
+            </div>
           </div>
           <div>
-            <div className="mb-2 flex items-center justify-between px-3 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-              <span>Item</span>
-              <span className="flex items-center gap-4">
-                <span className="w-24 text-right">Model prediction</span>
-                <span className="w-24 text-right">Recommended</span>
-                <span className="w-20 text-right">Change</span>
-                <span className="hidden w-64 text-right sm:block">Why</span>
-              </span>
-            </div>
-            <ul className="space-y-2">
-              {forecast.items.map((it) => {
-                const delta = it.adjusted_qty - it.forecast;
-                const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
-                const sign = delta > 0 ? "+" : "";
-                const deltaColor =
-                  delta > 0 ? "text-emerald-700" : delta < 0 ? "text-rose-700" : "text-zinc-500";
-                return (
-                  <li
-                    key={it.item}
-                    className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200/80 bg-white p-3 transition-colors hover:border-zinc-300"
-                  >
-                    <span className="font-medium capitalize text-zinc-900">
-                      {it.item}
-                    </span>
-                    <span className="flex items-center gap-4">
-                      <span className="w-24 text-right text-sm text-zinc-500">
+            <p className="ww-label mb-2">Tbl. 1 — Per-item detail</p>
+            <div className="border border-foreground/20">
+              <div className="grid grid-cols-[1fr_5rem_5rem_5rem_1fr] items-center gap-4 border-b-2 border-foreground/60 bg-[color:var(--muted)] px-3 py-2">
+                <span className="ww-label">Item</span>
+                <span className="ww-label text-right">Model</span>
+                <span className="ww-label text-right">Rec.</span>
+                <span className="ww-label text-right">Δ</span>
+                <span className="ww-label hidden text-right sm:block">Note</span>
+              </div>
+              <ul>
+                {forecast.items.map((it, idx) => {
+                  const delta = it.adjusted_qty - it.forecast;
+                  const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
+                  const sign = delta > 0 ? "+" : "";
+                  const deltaColor =
+                    delta > 0
+                      ? "text-[color:var(--accent)]"
+                      : delta < 0
+                        ? "text-destructive"
+                        : "text-muted-foreground";
+                  return (
+                    <li
+                      key={it.item}
+                      className={`grid grid-cols-[1fr_5rem_5rem_5rem_1fr] items-center gap-4 px-3 py-3 ${
+                        idx > 0 ? "border-t border-dashed border-foreground/15" : ""
+                      }`}
+                    >
+                      <span className="text-sm font-medium capitalize">{it.item}</span>
+                      <span className="ww-num text-right text-sm text-muted-foreground">
                         {it.forecast.toFixed(1)}
                       </span>
-                      <span className="w-24 text-right text-sm font-semibold text-zinc-900">
+                      <span className="ww-num text-right text-sm font-semibold">
                         {it.adjusted_qty.toFixed(1)}
                       </span>
-                      <span className={`w-20 text-right text-xs font-medium ${deltaColor}`}>
+                      <span className={`ww-num text-right text-xs ${deltaColor}`}>
                         {sign}
                         {delta.toFixed(1)}
-                        <span className="ml-1 text-[10px] font-normal opacity-70">
+                        <span className="ml-1 opacity-70">
                           ({sign}
                           {deltaPct.toFixed(0)}%)
                         </span>
                       </span>
-                      <span className="hidden w-64 justify-end sm:flex">
+                      <span className="hidden justify-end sm:flex">
                         <ReasonBadge reason={it.reason} />
                       </span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
-          <Button
-            onClick={() => router.push("/sourcing")}
-            className="bg-zinc-900 text-white hover:bg-zinc-700"
-          >
-            Next: Sourcing &rarr;
-          </Button>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => router.push("/sourcing")}
+              className="bg-foreground text-background hover:bg-foreground/80"
+            >
+              Continue to sourcing &rarr;
+            </Button>
+          </div>
         </>
       )}
     </div>

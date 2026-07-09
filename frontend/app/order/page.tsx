@@ -35,38 +35,40 @@ export default function OrderPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         href="/sourcing"
-        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+        className="ww-num inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
       >
-        <span aria-hidden>&larr;</span> Back to Sourcing
+        <span aria-hidden>&larr;</span> back to sourcing
       </Link>
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-          Step 4
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+        <p className="ww-label text-[color:var(--accent)]">§ IV &mdash; Order</p>
+        <h2 className="font-heading mt-1 text-3xl font-semibold">
           Purchase Order
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <div className="ww-rule mt-3 w-full text-foreground/40" />
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Review the draft, approve, and download the CSV for your supplier.
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white">
-        <POTable lines={sourcing.lines} total={sourcing.total} />
+      <div>
+        <p className="ww-label mb-2">Tbl. 3 — Purchase order draft</p>
+        <div className="border border-foreground/20 bg-card">
+          <POTable lines={sourcing.lines} total={sourcing.total} />
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-foreground/20 pt-4">
         <Button
           onClick={() => setApproved(true)}
           disabled={approved}
           className={
             approved
-              ? "bg-emerald-600 text-white"
-              : "bg-emerald-600 text-white hover:bg-emerald-700"
+              ? "bg-[color:var(--accent)] text-accent-foreground"
+              : "bg-[color:var(--accent)] text-accent-foreground hover:bg-[color:var(--accent)]/85"
           }
         >
           {approved ? "Approved ✓" : "Approve"}
@@ -74,7 +76,7 @@ export default function OrderPage() {
         <Button
           variant="secondary"
           onClick={download}
-          className="border border-zinc-200"
+          className="border border-foreground/25 bg-transparent hover:bg-foreground/5"
         >
           Download CSV
         </Button>

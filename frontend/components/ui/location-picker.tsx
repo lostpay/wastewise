@@ -66,7 +66,7 @@ function PlacesSearch({ onPick }: { onPick: (lat: number, lng: number, label: st
     <Input
       ref={inputRef}
       placeholder="Search a place (e.g. Times Square)"
-      className="border-zinc-200"
+      className="border-foreground/25 bg-card"
     />
   );
 }
@@ -134,17 +134,17 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
   if (!apiKey) {
     return (
       <div className="space-y-2">
-        <Label htmlFor="loc" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <Label htmlFor="loc" className="ww-label">
           Location (lat,lon)
         </Label>
         <Input
           id="loc"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="border-zinc-200 font-mono"
+          className="ww-num border-foreground/25 bg-card"
         />
-        <p className="text-xs text-zinc-400">
-          Set <code className="rounded bg-zinc-100 px-1 py-0.5">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in .env.local to enable the map picker.
+        <p className="ww-num text-[11px] text-muted-foreground">
+          Set <code className="bg-[color:var(--muted)] px-1 py-0.5">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in .env.local to enable the map picker.
         </p>
       </div>
     );
@@ -152,12 +152,9 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
 
   return (
     <div className="space-y-2">
-      <Label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-        Location
-      </Label>
       <APIProvider apiKey={apiKey}>
         <PlacesSearch onPick={commit} />
-        <div className="h-64 w-full overflow-hidden rounded-lg border border-zinc-200">
+        <div className="h-64 w-full overflow-hidden border border-foreground/25">
           <Map
             mapId={MAP_ID}
             defaultCenter={initial}
@@ -175,9 +172,9 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
             <ReverseGeocode lat={point.lat} lng={point.lng} onLabel={setLabel} />
           </Map>
         </div>
-        <p className="text-xs text-zinc-500">
-          <span className="font-mono">{formatLatLon(point.lat, point.lng)}</span>
-          {label && <span className="text-zinc-400"> — {label}</span>}
+        <p className="ww-num text-[11px] text-muted-foreground">
+          {formatLatLon(point.lat, point.lng)}
+          {label && <span className="text-muted-foreground/70"> — {label}</span>}
         </p>
       </APIProvider>
     </div>

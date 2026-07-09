@@ -46,7 +46,7 @@ describe("Setup screen", () => {
     // file must at least have those to reach the backend where the mocked error fires.
     const file = new File(["date,item,quantity\n2026-01-01,pork,1\n"], "bad.csv", { type: "text/csv" });
     await userEvent.upload(screen.getByLabelText(/sales csv/i), file);
-    await userEvent.click(screen.getByRole("button", { name: /^upload$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^upload/i }));
     expect(await screen.findByText(/CSV must contain columns/i)).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
   });
