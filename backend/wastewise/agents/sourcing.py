@@ -5,6 +5,18 @@ from wastewise.models import POLine, SourcingResponse
 SYSTEM = ("You write one short English sentence explaining how a chosen supplier "
           "price compares to the market benchmark. Respond with plain text only.")
 
+NO_BENCHMARK_NOTE = "No market benchmark available for comparison."
+NO_MATCH_NOTE = "No retail listing or market benchmark found for this item."
+
+
+def _fallback_note(unit_price: float, benchmark: float | None) -> str:
+    if benchmark is None:
+        return NO_BENCHMARK_NOTE
+    if unit_price < benchmark:
+        pct = round((benchmark - unit_price) / benchmark * 100)
+        return f"{pct}% under market benchmark."
+    return "At or above market benchmark."
+
 
 def _note(llm, item: str, unit_price: float, benchmark: float | None) -> str:
     try:
@@ -12,10 +24,7 @@ def _note(llm, item: str, unit_price: float, benchmark: float | None) -> str:
             SYSTEM,
             f"Item {item}: chosen price {unit_price}, benchmark {benchmark}.").strip()
     except Exception:
-        if benchmark and unit_price < benchmark:
-            pct = round((benchmark - unit_price) / benchmark * 100)
-            return f"{pct}% under market benchmark."
-        return "At or above market benchmark."
+        return _fallback_note(unit_price, benchmark)
 
 
 def source_order(items: list[dict], wholesale, retail, llm,
@@ -30,25 +39,31 @@ def source_order(items: list[dict], wholesale, retail, llm,
         if offers:
             best = min(offers, key=lambda p: p.unit_price)
             supplier, unit_price = best.supplier, best.unit_price
+        elif benchmark is not None:
+            supplier, unit_price = "Market", benchmark
         else:
-            supplier = "Market"
-            unit_price = benchmark if benchmark is not None else 0.0
+            supplier, unit_price = "No price data", 0.0
         line_total = round(unit_price * qty, 2)
         total += line_total
         if benchmark is not None and unit_price < benchmark:
             savings += (benchmark - unit_price) * qty
-        prepared.append((item, qty, supplier, unit_price, line_total, benchmark))
+        prepared.append((item, qty, supplier, unit_price, line_total, benchmark, bool(offers)))
 
-    # Notes are independent per-item LLM calls -- run them concurrently instead
-    # of one at a time, since each round trip dominates wall time otherwise.
+    def _note_for(p):
+        item, qty, supplier, unit_price, line_total, benchmark, has_offer = p
+        if not has_offer and benchmark is None:
+            return NO_MATCH_NOTE
+        if benchmark is None:
+            return NO_BENCHMARK_NOTE
+        return _note(llm, item, unit_price, benchmark)
+
     with ThreadPoolExecutor(max_workers=min(8, len(prepared)) or 1) as pool:
-        notes = list(pool.map(
-            lambda p: _note(llm, p[0], p[3], p[5]), prepared))
+        notes = list(pool.map(_note_for, prepared))
 
     lines = [
         POLine(item=item, qty=qty, supplier=supplier, unit_price=unit_price,
               line_total=line_total, note=note)
-        for (item, qty, supplier, unit_price, line_total, benchmark), note
+        for (item, qty, supplier, unit_price, line_total, benchmark, has_offer), note
         in zip(prepared, notes)
     ]
     return SourcingResponse(lines=lines, total=round(total, 2),

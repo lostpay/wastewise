@@ -1,6 +1,6 @@
 # tests/test_sourcing.py
 from wastewise.models import SupplierPrice
-from wastewise.agents.sourcing import source_order
+from wastewise.agents.sourcing import source_order, NO_BENCHMARK_NOTE, NO_MATCH_NOTE
 
 
 class _Wholesale:
@@ -32,6 +32,34 @@ class _NoRetail:
 
 
 def test_source_order_falls_back_to_market_when_no_retail():
+    resp = source_order([{"item": "cabbage", "qty": 4}],
+                        _Wholesale(), _NoRetail(), _FakeLLM(), "loc")
+    assert resp.lines[0].supplier == "Market"
+    assert resp.lines[0].unit_price == 2.0
+
+
+class _NoWholesale:
+    def get_wholesale_price(self, item): return None
+
+
+def test_source_order_no_benchmark_note_is_honest_not_misleading():
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _NoWholesale(), _Retail(), _FakeLLM(), "loc")
+    assert resp.lines[0].note == NO_BENCHMARK_NOTE
+
+
+def test_source_order_no_retail_and_no_benchmark_is_honest_zero():
+    resp = source_order([{"item": "mutton", "qty": 5}],
+                        _NoWholesale(), _NoRetail(), _FakeLLM(), "loc")
+    line = resp.lines[0]
+    assert line.supplier == "No price data"
+    assert line.unit_price == 0.0
+    assert line.note == NO_MATCH_NOTE
+
+
+def test_source_order_still_falls_back_to_market_when_benchmark_exists():
+    # Regression guard: no retail offers but a real benchmark still prices
+    # at the benchmark, not $0 -- this behavior must not change.
     resp = source_order([{"item": "cabbage", "qty": 4}],
                         _Wholesale(), _NoRetail(), _FakeLLM(), "loc")
     assert resp.lines[0].supplier == "Market"
