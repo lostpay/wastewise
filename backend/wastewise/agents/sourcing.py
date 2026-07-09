@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from wastewise.models import POLine, SourcingResponse
 
 SYSTEM = ("You write one short English sentence explaining how a chosen supplier "
@@ -18,9 +20,9 @@ def _note(llm, item: str, unit_price: float, benchmark: float | None) -> str:
 
 def source_order(items: list[dict], wholesale, retail, llm,
                  location: str) -> SourcingResponse:
-    lines: list[POLine] = []
     total = 0.0
     savings = 0.0
+    prepared = []
     for entry in items:
         item, qty = entry["item"], float(entry["qty"])
         benchmark = wholesale.get_wholesale_price(item)
@@ -35,8 +37,19 @@ def source_order(items: list[dict], wholesale, retail, llm,
         total += line_total
         if benchmark is not None and unit_price < benchmark:
             savings += (benchmark - unit_price) * qty
-        lines.append(POLine(item=item, qty=qty, supplier=supplier,
-                            unit_price=unit_price, line_total=line_total,
-                            note=_note(llm, item, unit_price, benchmark)))
+        prepared.append((item, qty, supplier, unit_price, line_total, benchmark))
+
+    # Notes are independent per-item LLM calls -- run them concurrently instead
+    # of one at a time, since each round trip dominates wall time otherwise.
+    with ThreadPoolExecutor(max_workers=min(8, len(prepared)) or 1) as pool:
+        notes = list(pool.map(
+            lambda p: _note(llm, p[0], p[3], p[5]), prepared))
+
+    lines = [
+        POLine(item=item, qty=qty, supplier=supplier, unit_price=unit_price,
+              line_total=line_total, note=note)
+        for (item, qty, supplier, unit_price, line_total, benchmark), note
+        in zip(prepared, notes)
+    ]
     return SourcingResponse(lines=lines, total=round(total, 2),
                             savings=round(savings, 2))
