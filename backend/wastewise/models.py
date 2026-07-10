@@ -33,9 +33,17 @@ class AdjustedItem(BaseModel):
     live: bool
 
 
+class BacktestStats(BaseModel):
+    delta: float
+    waste_avoided_units: float
+    waste_avoided_value: float | None
+
+
 class ForecastResponse(BaseModel):
     items: list[AdjustedItem]
     baseline_delta: float
+    waste_avoided_units: float = 0.0
+    waste_avoided_value: float | None = None
 
 
 class POLine(BaseModel):

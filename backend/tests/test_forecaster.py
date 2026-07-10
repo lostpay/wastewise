@@ -26,7 +26,7 @@ def test_holiday_flag_marks_holiday_dates(sample_sales):
 
 
 def test_forecast_items_returns_item_per_product(sample_sales):
-    items, delta = forecast_items(sample_sales, horizon_days=7)
+    items, stats = forecast_items(sample_sales, horizon_days=7)
     names = {i.item for i in items}
     assert names == {"cabbage", "pork"}
     for it in items:
@@ -34,4 +34,17 @@ def test_forecast_items_returns_item_per_product(sample_sales):
         assert it.forecast >= 0
         # recommended = forecast + 15% buffer
         assert abs(it.recommended_purchase_qty - it.forecast * 1.15) < 1e-6
-    assert 0.0 <= delta <= 1.0
+    assert 0.0 <= stats.delta <= 1.0
+
+
+def test_backtest_reports_waste_avoided_units(sample_sales):
+    _, stats = forecast_items(sample_sales, horizon_days=7)
+    assert stats.waste_avoided_units >= 0.0
+    assert stats.waste_avoided_value is None  # sample_sales has no prices
+
+
+def test_waste_avoided_value_present_when_prices_exist(sample_sales):
+    priced = [r.model_copy(update={"price": 2.0}) for r in sample_sales]
+    _, stats = forecast_items(priced, horizon_days=7)
+    assert stats.waste_avoided_value is not None
+    assert stats.waste_avoided_value >= 0.0
