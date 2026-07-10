@@ -12,7 +12,7 @@ SERIES: dict[str, str] = {
     "milk": "APU0000709112",
     "tomato": "APU0000712311",
     "tomatoes": "APU0000712311",
-    "rice": "APU0000701322",
+    "rice": "APU0000701312",
     "sugar": "APU0000715211",
 }
 
