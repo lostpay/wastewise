@@ -31,6 +31,13 @@ export interface ForecastAdjustedItem {
   adjusted_qty: number;
   reason: string;
   live: boolean;
+  daily?: number[];
+}
+
+export interface HistoryPoint {
+  date: string;
+  item: string;
+  quantity: number;
 }
 
 export interface ForecastResponse {

@@ -5,8 +5,9 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { uploadCsv, ApiError } from "@/lib/api";
-import { setDemoMode, clearDemoServed } from "@/lib/demo";
-import type { Currency, Horizon, UploadResponse } from "@/lib/types";
+import { setDemoMode, clearDemoServed, DEMO_HISTORY } from "@/lib/demo";
+import { parseSalesHistory } from "@/lib/csv";
+import type { Currency, Horizon, UploadResponse, HistoryPoint } from "@/lib/types";
 import { CURRENCY_OPTIONS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { CsvDropzone } from "@/components/ui/csv-dropzone";
@@ -35,15 +36,15 @@ export default function SetupPage() {
     if (datasetId) {
       setDemoMode(false);
       clearDemoServed();
-      set({ datasetId: null, summary: null, forecast: null, sourcing: null, rationale: null });
+      set({ datasetId: null, summary: null, forecast: null, sourcing: null, rationale: null, history: null });
     }
   }, [hydrated, datasetId, set]);
 
-  function advance(res: UploadResponse) {
+  function advance(res: UploadResponse, history: HistoryPoint[] | null) {
     // Clear any forecast/sourcing from a prior dataset. The forecast and
     // sourcing pages skip recomputation when those values are already present,
     // so a new upload must reset them or the wizard shows the previous run's data.
-    set({ datasetId: res.dataset_id, summary: res.summary, forecast: null, sourcing: null, rationale: null });
+    set({ datasetId: res.dataset_id, summary: res.summary, forecast: null, sourcing: null, rationale: null, history });
     router.push("/forecast");
   }
 
@@ -52,7 +53,8 @@ export default function SetupPage() {
     setError(null);
     setLoading(true);
     try {
-      advance(await uploadCsv(file));
+      const text = await file.text();
+      advance(await uploadCsv(file), parseSalesHistory(text));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Upload failed. Please try again.");
     } finally {
@@ -65,7 +67,7 @@ export default function SetupPage() {
     setError(null);
     setLoading(true);
     try {
-      advance(await uploadCsv(new File([""], "demo.csv", { type: "text/csv" })));
+      advance(await uploadCsv(new File([""], "demo.csv", { type: "text/csv" })), DEMO_HISTORY);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Upload failed. Please try again.");
     } finally {
