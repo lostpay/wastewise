@@ -29,9 +29,9 @@ export const DEMO_SOURCING: SourcingResponse = {
   total: 618.4,
   savings: 92.0,
   lines: [
-    { item: "cabbage", qty: 150, supplier: "Kroger", unit_price: 1.4, line_total: 210.0, live: true, note: "$1.40 vs. US avg $2.00 (30% under).", benchmark: 2.0 },
-    { item: "pork", qty: 118, supplier: "Kroger", unit_price: 1.4, line_total: 165.2, live: true, note: "$1.40 vs. US avg $2.00 (30% under).", benchmark: 2.0 },
-    { item: "chicken", qty: 196, supplier: "Kroger", unit_price: 1.24, line_total: 243.2, live: true, note: "$1.24 vs. US avg $2.00 (38% under).", benchmark: 2.0 },
+    { item: "cabbage", qty: 150, unit: "1 lb", supplier: "Kroger", unit_price: 1.4, line_total: 210.0, live: true, note: "$1.40 vs. US avg $2.00 (30% under).", benchmark: 2.0 },
+    { item: "pork", qty: 118, unit: "1 lb", supplier: "Kroger", unit_price: 1.4, line_total: 165.2, live: true, note: "$1.40 vs. US avg $2.00 (30% under).", benchmark: 2.0 },
+    { item: "chicken", qty: 196, unit: "1 lb", supplier: "Kroger", unit_price: 1.24, line_total: 243.2, live: true, note: "$1.24 vs. US avg $2.00 (38% under).", benchmark: 2.0 },
   ],
 };
 

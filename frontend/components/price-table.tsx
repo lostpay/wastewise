@@ -42,7 +42,10 @@ function PriceCell({ line }: { line: POLine }) {
   const showDelta = hasBenchmark && roundedPct > 0;
   return (
     <div className="flex flex-col items-end gap-0.5">
-      <span className="ww-num text-sm">${line.unit_price.toFixed(2)}</span>
+      <span className="ww-num text-sm">
+        ${line.unit_price.toFixed(2)}
+        {line.unit ? <span className="text-muted-foreground"> / {line.unit}</span> : null}
+      </span>
       {showDelta ? (
         <span
           className={`ww-num text-[10px] ${

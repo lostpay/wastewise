@@ -58,6 +58,7 @@ class POLine(BaseModel):
     # benchmark came from the historical fallback or no source at all.
     # `savings` at the response level only counts rows where this is not None.
     benchmark: float | None = None
+    unit: str = ""
 
 
 class SourcingResponse(BaseModel):
@@ -81,6 +82,7 @@ class SupplierPrice(BaseModel):
     supplier: str
     unit_price: float
     description: str = ""
+    unit: str = ""
 
 
 class RationaleResponse(BaseModel):

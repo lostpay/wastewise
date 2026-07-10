@@ -101,5 +101,6 @@ class KrogerRetail:
             if not val:
                 continue
             out.append(SupplierPrice(supplier="Kroger", unit_price=float(val),
-                                     description=str(product.get("description") or "")))
+                                     description=str(product.get("description") or ""),
+                                     unit=str(items[0].get("size") or "")))
         return out

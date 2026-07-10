@@ -4,13 +4,14 @@ import { poToCsv } from "@/lib/csv";
 describe("poToCsv", () => {
   it("emits a header, one row per line, and a total row", () => {
     const csv = poToCsv(
-      [{ item: "cabbage", qty: 10, supplier: "Kroger", unit_price: 1.5, line_total: 15, note: "cheap, fresh", live: true, benchmark: null }],
+      [{ item: "cabbage", qty: 10, unit: "1 lb", supplier: "Kroger", unit_price: 1.5, line_total: 15, note: "cheap, fresh", live: true, benchmark: null }],
       15,
     );
     const lines = csv.trim().split("\n");
-    expect(lines[0]).toBe("item,qty,supplier,unit_price,line_total,note");
-    expect(lines[1]).toBe('cabbage,10,Kroger,1.5,15,"cheap, fresh"'); // note with comma is quoted
-    expect(lines[2]).toBe("Total,,,,15,");
+    expect(lines[0]).toBe("item,qty,unit,supplier,unit_price,line_total,note");
+    expect(lines[1]).toBe('cabbage,10,1 lb,Kroger,1.5,15,"cheap, fresh"'); // note with comma is quoted
+    expect(lines[1]).toContain(",1 lb,");
+    expect(lines[2]).toBe("Total,,,,,15,");
   });
 
   it("quotes item and supplier fields that contain commas or quotes", () => {
@@ -20,7 +21,7 @@ describe("poToCsv", () => {
     );
     const row = csv.trim().split("\n")[1];
     // structure must not shift: item and supplier are individually quoted/escaped
-    expect(row).toBe('"beans, dried",5,"A ""Farm"" Co",2,10,ok');
+    expect(row).toBe('"beans, dried",5,,"A ""Farm"" Co",2,10,ok');
   });
 
   it("neutralizes CSV formula injection by prefixing a leading =, +, -, or @", () => {
@@ -30,6 +31,6 @@ describe("poToCsv", () => {
     );
     const row = csv.trim().split("\n")[1];
     // each formula-triggering field gets a leading apostrophe so spreadsheets treat it as text
-    expect(row).toBe("'=cmd,1,'+1,1,1,'@SUM(A1)");
+    expect(row).toBe("'=cmd,1,,'+1,1,1,'@SUM(A1)");
   });
 });

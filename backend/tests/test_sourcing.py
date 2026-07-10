@@ -161,3 +161,20 @@ def test_source_order_falls_back_when_llm_picks_out_of_range_index():
                         _Wholesale(), _MultiRetail(), _OutOfRangeLLM(), "loc")
     assert resp.lines[0].unit_price == 4.5
     assert resp.lines[0].live is False
+
+
+def test_po_line_carries_offer_unit():
+    class _Wholesale:
+        def get_wholesale_price(self, item): return None
+
+    class _Retail:
+        def get_retail_prices(self, item, location):
+            return [SupplierPrice(supplier="Kroger", unit_price=1.0,
+                                  description="Green Cabbage", unit="1 lb")]
+
+    class _BadLLM:
+        def complete(self, system, user): return "not json"
+
+    resp = source_order([{"item": "cabbage", "qty": 3}],
+                        _Wholesale(), _Retail(), _BadLLM(), "40.7,-74.0")
+    assert resp.lines[0].unit == "1 lb"

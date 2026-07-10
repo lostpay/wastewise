@@ -51,6 +51,7 @@ export interface POLine {
   // US retail average (BLS via FRED) in USD, or null when the item has no
   // real US benchmark (historical fallback or nothing).
   benchmark: number | null;
+  unit?: string;
 }
 
 export interface SourcingResponse {

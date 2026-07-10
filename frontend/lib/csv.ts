@@ -8,9 +8,9 @@ function esc(v: string): string {
 }
 
 export function poToCsv(lines: POLine[], total: number): string {
-  const header = "item,qty,supplier,unit_price,line_total,note";
+  const header = "item,qty,unit,supplier,unit_price,line_total,note";
   const rows = lines.map((l) =>
-    [esc(l.item), l.qty, esc(l.supplier), l.unit_price, l.line_total, esc(l.note)].join(","),
+    [esc(l.item), l.qty, esc(l.unit ?? ""), esc(l.supplier), l.unit_price, l.line_total, esc(l.note)].join(","),
   );
-  return [header, ...rows, `Total,,,,${total},`].join("\n");
+  return [header, ...rows, `Total,,,,,${total},`].join("\n");
 }

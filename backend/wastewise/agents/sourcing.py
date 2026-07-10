@@ -89,11 +89,11 @@ def source_order(items: list[dict], wholesale, retail, llm,
     for (item, qty, benchmark, offers), (offer, note, live) in zip(prepared, resolved):
         is_historical_benchmark = item.lower() in historical_items
         if offer is not None:
-            supplier, unit_price = offer.supplier, offer.unit_price
+            supplier, unit_price, unit = offer.supplier, offer.unit_price, offer.unit
         elif benchmark is not None:
-            supplier, unit_price = "Market", benchmark
+            supplier, unit_price, unit = "Market", benchmark, ""
         else:
-            supplier, unit_price = "No price data", 0.0
+            supplier, unit_price, unit = "No price data", 0.0, ""
         line_total = round(unit_price * qty, 2)
         total += line_total
         # Real US retail benchmark (FRED) -- the only kind that shows in the
@@ -111,6 +111,6 @@ def source_order(items: list[dict], wholesale, retail, llm,
             savings += (real_benchmark - unit_price) * qty
         lines.append(POLine(item=item, qty=qty, supplier=supplier,
                             unit_price=unit_price, line_total=line_total,
-                            note=note, live=live, benchmark=real_benchmark))
+                            note=note, live=live, benchmark=real_benchmark, unit=unit))
     return SourcingResponse(lines=lines, total=round(total, 2),
                             savings=round(savings, 2))
