@@ -23,6 +23,7 @@ class ForecastItem(BaseModel):
     baseline: float
     safety_buffer: float
     recommended_purchase_qty: float
+    daily: list[float] = []
 
 
 class AdjustedItem(BaseModel):
@@ -31,6 +32,7 @@ class AdjustedItem(BaseModel):
     adjusted_qty: float
     reason: str
     live: bool
+    daily: list[float] = []
 
 
 class BacktestStats(BaseModel):

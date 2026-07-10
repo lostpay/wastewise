@@ -48,13 +48,16 @@ def forecast_items(records: list[SalesRecord], horizon_days: int,
     items: list[ForecastItem] = []
     for item, g in df.groupby("item"):
         future = _future_rows(g, horizon_days, holiday_dates)
-        pred = float(np.clip(model.predict(future[FEATURES]).sum(), 0, None))
+        preds = model.predict(future[FEATURES])
+        daily = [round(float(max(p, 0.0)), 2) for p in preds]
+        pred = float(np.clip(preds.sum(), 0, None))
         base = baseline_forecast(records, item, horizon_days)
         buffer = safety_frac * pred
         items.append(ForecastItem(item=item, forecast=round(pred, 2),
                                   baseline=round(base, 2),
                                   safety_buffer=round(buffer, 2),
-                                  recommended_purchase_qty=round(pred + buffer, 2)))
+                                  recommended_purchase_qty=round(pred + buffer, 2),
+                                  daily=daily))
     stats = _backtest(records, df, safety_frac)
     return items, stats
 
