@@ -30,6 +30,7 @@ class AdjustedItem(BaseModel):
     forecast: float
     adjusted_qty: float
     reason: str
+    live: bool
 
 
 class ForecastResponse(BaseModel):
@@ -44,6 +45,7 @@ class POLine(BaseModel):
     unit_price: float
     line_total: float
     note: str
+    live: bool
 
 
 class SourcingResponse(BaseModel):
@@ -67,3 +69,8 @@ class SupplierPrice(BaseModel):
     supplier: str
     unit_price: float
     description: str = ""
+
+
+class RationaleResponse(BaseModel):
+    paragraph: str
+    live: bool

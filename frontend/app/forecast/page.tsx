@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
@@ -118,29 +118,33 @@ export default function ForecastPage() {
                           ? "text-amber-700"
                           : "text-muted-foreground";
                     return (
-                      <tr
-                        key={it.item}
-                        className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}
-                      >
-                        <td className="px-4 py-3 text-sm font-medium capitalize">{it.item}</td>
-                        <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
-                          {it.forecast.toFixed(1)}
-                        </td>
-                        <td className="ww-num px-4 py-3 text-right text-sm font-semibold">
-                          {it.adjusted_qty.toFixed(1)}
-                        </td>
-                        <td className={`ww-num px-4 py-3 text-right text-xs ${deltaColor}`}>
-                          {sign}
-                          {delta.toFixed(1)}
-                          <span className="ml-1 opacity-70">
-                            ({sign}
-                            {deltaPct.toFixed(0)}%)
-                          </span>
-                        </td>
-                        <td className="hidden px-4 py-3 text-right align-top sm:table-cell">
-                          <ReasonBadge reason={it.reason} />
-                        </td>
-                      </tr>
+                      <Fragment key={it.item}>
+                        <tr className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}>
+                          <td className="px-4 py-3 text-sm font-medium capitalize">{it.item}</td>
+                          <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
+                            {it.forecast.toFixed(1)}
+                          </td>
+                          <td className="ww-num px-4 py-3 text-right text-sm font-semibold">
+                            {it.adjusted_qty.toFixed(1)}
+                          </td>
+                          <td className={`ww-num px-4 py-3 text-right text-xs ${deltaColor}`}>
+                            {sign}
+                            {delta.toFixed(1)}
+                            <span className="ml-1 opacity-70">
+                              ({sign}
+                              {deltaPct.toFixed(0)}%)
+                            </span>
+                          </td>
+                          <td className="hidden px-4 py-3 text-right align-top sm:table-cell">
+                            <ReasonBadge reason={it.reason} live={it.live} />
+                          </td>
+                        </tr>
+                        <tr className="sm:hidden">
+                          <td colSpan={4} className="px-4 pb-3">
+                            <ReasonBadge reason={it.reason} live={it.live} />
+                          </td>
+                        </tr>
+                      </Fragment>
                     );
                   })}
                 </tbody>

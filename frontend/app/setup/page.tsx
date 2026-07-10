@@ -33,7 +33,7 @@ export default function SetupPage() {
     cleared.current = true;
     if (datasetId) {
       setDemoMode(false);
-      set({ datasetId: null, summary: null, forecast: null, sourcing: null });
+      set({ datasetId: null, summary: null, forecast: null, sourcing: null, rationale: null });
     }
   }, [hydrated, datasetId, set]);
 
@@ -41,7 +41,7 @@ export default function SetupPage() {
     // Clear any forecast/sourcing from a prior dataset. The forecast and
     // sourcing pages skip recomputation when those values are already present,
     // so a new upload must reset them or the wizard shows the previous run's data.
-    set({ datasetId: res.dataset_id, summary: res.summary, forecast: null, sourcing: null });
+    set({ datasetId: res.dataset_id, summary: res.summary, forecast: null, sourcing: null, rationale: null });
     router.push("/forecast");
   }
 

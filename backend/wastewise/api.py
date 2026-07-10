@@ -9,7 +9,8 @@ from pydantic import BaseModel, field_validator
 from wastewise.config import get_settings
 from wastewise.storage import DatasetStore
 from wastewise.ingest import parse_sales_csv, summarize
-from wastewise.pipeline import run_forecast, run_sourcing
+from wastewise.pipeline import run_forecast, run_sourcing, run_rationale
+from wastewise.models import AdjustedItem, POLine
 from wastewise.adapters.base import FileCache
 from wastewise.adapters.weather_noaa import NOAAWeather
 from wastewise.adapters.holidays import USHolidays
@@ -85,6 +86,13 @@ class SourcingRequest(_LocatedRequest):
     dataset_id: str | None = None
 
 
+class RationaleRequest(BaseModel):
+    items: list[AdjustedItem]
+    lines: list[POLine]
+    savings: float
+    total: float
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -127,3 +135,8 @@ def sourcing(req: SourcingRequest, deps: dict = Depends(get_deps)):
         retail = FallbackRetail(retail, historical)
     return run_sourcing([i.model_dump() for i in req.items], req.location,
                         wholesale, retail, deps["llm"])
+
+
+@app.post("/rationale")
+def rationale(req: RationaleRequest, deps: dict = Depends(get_deps)):
+    return run_rationale(req.items, req.lines, req.savings, req.total, deps["llm"])
