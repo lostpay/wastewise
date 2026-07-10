@@ -34,7 +34,6 @@ export function HistoryChart({
     return rows;
   }, [history, items, selected]);
 
-  if (data.length === 0) return null;
   return (
     <div>
       <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
@@ -53,7 +52,14 @@ export function HistoryChart({
         </select>
       </div>
       <div className="p-4">
-        <ResponsiveContainer width="100%" height={240}>
+        {/* Selecting an item with no uploaded history must not unmount the whole
+            card (and its selector) -- show an empty state and keep the picker. */}
+        {data.length === 0 ? (
+          <p className="ww-num py-16 text-center text-xs text-muted-foreground">
+            No sales history for this item.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={240}>
           <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
             <XAxis dataKey="date" tick={TICK} axisLine={{ stroke: "#1a1a1a", strokeWidth: 1 }} tickLine={false} minTickGap={24} />
             <YAxis tick={TICK} axisLine={{ stroke: "#1a1a1a", strokeWidth: 1 }} tickLine={false} width={40} />
@@ -71,7 +77,8 @@ export function HistoryChart({
             <Line type="monotone" dataKey="actual" stroke="#7a6a4a" strokeWidth={1.5} dot={false} name="Actual sales" />
             <Line type="monotone" dataKey="forecast" stroke="#1a1a1a" strokeWidth={1.5} strokeDasharray="4 3" dot={false} name="Forecast" />
           </LineChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

@@ -65,7 +65,11 @@ export default function OrderPage() {
       i === index ? { ...l, qty, line_total: round2(l.unit_price * qty) } : l,
     );
     const total = round2(lines.reduce((s, l) => s + l.line_total, 0));
-    set({ sourcing: { ...sourcing, lines, total } });
+    // A manual quantity override invalidates the AI rationale, which describes
+    // the originally sourced order and cites its totals. Drop it (and suppress a
+    // refetch) so its figures can't contradict the edited table.
+    started.current = true;
+    set({ sourcing: { ...sourcing, lines, total }, rationale: null });
     setApproved(false);
   }
 
