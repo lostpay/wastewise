@@ -10,7 +10,7 @@ Two deployments of the same backend. **Track A** is the permanent public link;
    `render.yaml`. It creates the `wastewise-backend` web service.
 3. When prompted for the `sync:false` secrets, enter:
    - `LLM_API_KEY` = your Fireworks API key
-   - `USDA_API_KEY`, `KROGER_CLIENT_ID`, `KROGER_CLIENT_SECRET` = optional (leave
+   - `FRED_API_KEY`, `KROGER_CLIENT_ID`, `KROGER_CLIENT_SECRET` = optional (leave
      blank to use graceful fallbacks).
 4. Wait for the build (`pip install -e .`) and first deploy to go green. Note the
    service URL, e.g. `https://wastewise-backend.onrender.com`.
