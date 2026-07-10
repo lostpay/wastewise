@@ -16,7 +16,7 @@ Tests: `pytest -q`
 ## Demo datasets
 Two bundled CSVs under `wastewise/data/`:
 - `demo_sales.csv` — 3 US grocery items (cabbage/chicken/pork). Use for the
-  full **sourcing** demo (Kroger/USDA are US-only).
+  full **sourcing** demo (Kroger/FRED are US-only).
 - `demo_sales_forecast_only.csv` — 10 items, realistic noise, ~1000 rows. Use
   for the **forecast** screen's "XGBoost beats baseline" story; `baseline_delta`
   is ~0.24 on this dataset vs. ~0.0 on the small demo CSV (whose pattern is too

@@ -5,21 +5,22 @@ from wastewise.agents.llm import extract_json
 
 SELECT_SYSTEM = (
     "You are a restaurant purchasing agent choosing which supplier listing to buy "
-    "for a bulk kitchen order. Given a plain ingredient name, a reference price "
-    "(or 'none' if unavailable), and a numbered list of candidate "
-    "retail listings (each with a description and unit price), pick the listing "
-    "that is the plain, unprocessed commodity form of the ingredient -- not a "
-    "marinated, seasoned, or specialty product -- at the best price. Respond ONLY "
-    'with JSON: {"index": int, "reason": str}. "index" is the 0-based position '
-    'in the candidate list. "reason" is one short English sentence explaining the '
-    "choice. If the reference price is 'none', do NOT claim or imply a reference "
-    "price comparison (e.g. never say 'under reference price' or 'at or above "
-    "reference price') -- explain the choice in terms of the listing itself (e.g. "
-    "plain cut vs. specialty, or lowest price among candidates) instead."
+    "for a bulk kitchen order. Given a plain ingredient name, a US retail average "
+    "benchmark price (BLS, via FRED) (or 'none' if unavailable), and a numbered "
+    "list of candidate retail listings (each with a description and unit price), "
+    "pick the listing that is the plain, unprocessed commodity form of the "
+    "ingredient -- not a marinated, seasoned, or specialty product -- at the best "
+    "price. Respond ONLY with JSON: {\"index\": int, \"reason\": str}. \"index\" is "
+    'the 0-based position in the candidate list. "reason" is one short English '
+    "sentence explaining the choice. If the benchmark is 'none', do NOT claim or "
+    "imply a comparison to it (e.g. never say 'under the US retail average' or "
+    "'at or above the US retail average') -- explain the choice in terms of the "
+    "listing itself (e.g. plain cut vs. specialty, or lowest price among "
+    "candidates) instead."
 )
 
-NO_BENCHMARK_NOTE = "No reference price available for comparison."
-NO_MATCH_NOTE = "No retail listing or reference price found for this item."
+NO_BENCHMARK_NOTE = "No US retail average available for comparison."
+NO_MATCH_NOTE = "No retail listing or US retail average found for this item."
 
 
 def _fallback_note(unit_price: float, benchmark: float | None) -> str:
@@ -27,8 +28,8 @@ def _fallback_note(unit_price: float, benchmark: float | None) -> str:
         return NO_BENCHMARK_NOTE
     if unit_price < benchmark:
         pct = round((benchmark - unit_price) / benchmark * 100)
-        return f"{pct}% under reference price."
-    return "At or above reference price."
+        return f"{pct}% under the US retail average."
+    return "At or above the US retail average."
 
 
 def _choose_offer(llm, item: str, offers: list[SupplierPrice],

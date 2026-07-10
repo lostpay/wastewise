@@ -8,3 +8,4 @@ backend/wastewise/data/cache/
 node_modules/
 .next/
 *.egg-info/
+.vscode/

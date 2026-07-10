@@ -39,47 +39,53 @@ export default function SourcingPage() {
     return <RedirectNotice target="Forecast" reason="Run a forecast before sourcing suppliers." />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         href="/forecast"
-        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+        className="ww-num inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
       >
-        <span aria-hidden>&larr;</span> Back to Forecast
+        <span aria-hidden>&larr;</span> back to forecast
       </Link>
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-          Step 3
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+        <p className="ww-label text-accent">§ III &mdash; Sourcing</p>
+        <h2 className="font-heading mt-1 text-3xl font-semibold">
           Smart Sourcing
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          Best supplier per item, benchmarked against wholesale market prices.
+        <div className="ww-rule mt-3 w-full text-foreground/40" />
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Live Kroger retail prices for each item, benchmarked against the
+          US retail average from the Bureau of Labor Statistics (via FRED).
         </p>
       </div>
 
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : loading || !sourcing ? (
-        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full" />
       ) : (
         <>
           <StatTile
-            label="Estimated savings vs. market"
+            label="Estimated savings vs. US retail average"
             value={`$${sourcing.savings.toFixed(2)}`}
+            hint="Sum of (BLS benchmark − Kroger price) × qty for items where Kroger beats the benchmark."
           />
-          <div className="overflow-hidden rounded-xl border border-zinc-200/80 bg-white">
-            <PriceTable lines={sourcing.lines} />
+          <div>
+            <p className="ww-label mb-2">Tbl. 2 — Supplier price detail</p>
+            <div className="border border-foreground/20 bg-card">
+              <PriceTable lines={sourcing.lines} />
+            </div>
           </div>
-          <Button
-            onClick={() => router.push("/order")}
-            className="bg-zinc-900 text-white hover:bg-zinc-700"
-          >
-            Next: Purchase Order &rarr;
-          </Button>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => router.push("/order")}
+              className="bg-foreground text-background hover:bg-foreground/80"
+            >
+              Continue to purchase order &rarr;
+            </Button>
+          </div>
         </>
       )}
     </div>

@@ -39,68 +39,122 @@ export default function ForecastPage() {
     return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         href="/setup"
-        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+        className="ww-num inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
       >
-        <span aria-hidden>&larr;</span> Back to Setup
+        <span aria-hidden>&larr;</span> back to setup
       </Link>
 
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-          Step 2
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+        <p className="ww-label text-accent">§ II &mdash; Forecast</p>
+        <h2 className="font-heading mt-1 text-3xl font-semibold">
           Predictive Forecast
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          Weather- and holiday-adjusted demand for the next {horizon}.
+        <div className="ww-rule mt-3 w-full text-foreground/40" />
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Per-item demand for the next {horizon}. The base model predicts sales
+          from your history; an LLM then nudges each quantity up or down for
+          weather and public holidays.
         </p>
       </div>
 
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : loading || !forecast ? (
-        <Skeleton className="h-80 w-full rounded-xl" />
+        <Skeleton className="h-80 w-full" />
       ) : (
         <>
           <StatTile
-            label="Model improvement over baseline"
+            label="Forecast accuracy gain vs. simple seasonal baseline"
             value={`${Math.round(forecast.baseline_delta * 100)}%`}
+            hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Higher is better."
           />
-          <div className="rounded-xl border border-zinc-200/80 bg-white p-4">
-            <ForecastChart items={forecast.items} />
+          <div className="border border-foreground/20 bg-card">
+            <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
+              <p className="ww-label">Fig. 1 — Per-item quantities</p>
+              <div className="ww-num flex items-center gap-4 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 bg-chart-3" /> Model
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 bg-foreground" /> Recommended
+                </span>
+              </div>
+            </div>
+            <div className="p-4">
+              <ForecastChart items={forecast.items} />
+            </div>
           </div>
-          <ul className="space-y-2">
-            {forecast.items.map((it) => (
-              <li
-                key={it.item}
-                className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200/80 bg-white p-3 transition-colors hover:border-zinc-300"
-              >
-                <div>
-                  <span className="font-medium capitalize text-zinc-900">
-                    {it.item}
-                  </span>
-                  <span className="ml-2 text-sm text-zinc-500">
-                    {it.forecast} &rarr;{" "}
-                    <span className="font-semibold text-zinc-900">
-                      {it.adjusted_qty}
-                    </span>
-                  </span>
-                </div>
-                <ReasonBadge reason={it.reason} />
-              </li>
-            ))}
-          </ul>
-          <Button
-            onClick={() => router.push("/sourcing")}
-            className="bg-zinc-900 text-white hover:bg-zinc-700"
-          >
-            Next: Sourcing &rarr;
-          </Button>
+          <div>
+            <p className="ww-label mb-2">Tbl. 1 — Per-item detail</p>
+            <div className="border border-foreground/20">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-foreground/60 bg-muted">
+                    <th className="ww-label px-4 py-2 text-left">Item</th>
+                    <th className="ww-label px-4 py-2 text-right">Model</th>
+                    <th className="ww-label px-4 py-2 text-right">Rec.</th>
+                    <th className="ww-label px-4 py-2 text-right">Δ</th>
+                    <th className="ww-label hidden px-4 py-2 text-right sm:table-cell">Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {forecast.items.map((it, idx) => {
+                    const delta = it.adjusted_qty - it.forecast;
+                    const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
+                    const sign = delta > 0 ? "+" : "";
+                    // Down = saved-from-waste (green). Up = justified extra
+                    // spend (amber). Zero = muted. Deliberately not "up=good"
+                    // — this is a waste-reduction app, so shrinking a
+                    // purchase is the product's success state.
+                    const deltaColor =
+                      delta < 0
+                        ? "text-emerald-700"
+                        : delta > 0
+                          ? "text-amber-700"
+                          : "text-muted-foreground";
+                    return (
+                      <tr
+                        key={it.item}
+                        className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium capitalize">{it.item}</td>
+                        <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
+                          {it.forecast.toFixed(1)}
+                        </td>
+                        <td className="ww-num px-4 py-3 text-right text-sm font-semibold">
+                          {it.adjusted_qty.toFixed(1)}
+                        </td>
+                        <td className={`ww-num px-4 py-3 text-right text-xs ${deltaColor}`}>
+                          {sign}
+                          {delta.toFixed(1)}
+                          <span className="ml-1 opacity-70">
+                            ({sign}
+                            {deltaPct.toFixed(0)}%)
+                          </span>
+                        </td>
+                        <td className="hidden px-4 py-3 text-right align-top sm:table-cell">
+                          <ReasonBadge reason={it.reason} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => router.push("/sourcing")}
+              className="bg-foreground text-background hover:bg-foreground/80"
+            >
+              Continue to sourcing &rarr;
+            </Button>
+          </div>
         </>
       )}
     </div>

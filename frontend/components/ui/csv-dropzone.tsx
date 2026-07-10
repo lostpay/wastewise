@@ -101,14 +101,13 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-baseline justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Sales CSV</p>
+      <div className="flex items-baseline justify-end">
         <button
           type="button"
           onClick={downloadSample}
-          className="text-xs font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
+          className="ww-label text-accent hover:underline"
         >
-          Download sample
+          Download sample &darr;
         </button>
       </div>
 
@@ -127,12 +126,12 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
         onDragLeave={onDragLeave}
         aria-disabled={disabled}
         className={cn(
-          "group relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors",
+          "group relative flex cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 py-10 text-center transition-colors",
           dragging
-            ? "border-emerald-500 bg-emerald-50"
+            ? "border-accent bg-accent/8"
             : value
-            ? "border-emerald-300 bg-emerald-50/40"
-            : "border-zinc-300 bg-zinc-50 hover:border-zinc-400 hover:bg-zinc-100",
+              ? "border-foreground/60 bg-muted"
+              : "border-foreground/25 bg-card hover:border-foreground/50 hover:bg-muted/50",
           disabled && "pointer-events-none opacity-60",
         )}
       >
@@ -148,14 +147,14 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
         {value && preview ? (
           <div className="flex w-full items-center justify-between gap-3 text-left">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
+              <div className="grid h-10 w-10 shrink-0 place-items-center border border-foreground/40 bg-background text-foreground">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.5 3h9l4.5 4.5v13.5a1.5 1.5 0 01-1.5 1.5h-12A1.5 1.5 0 012 21V4.5A1.5 1.5 0 013.5 3h4" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-zinc-900">{value.name}</p>
-                <p className="text-xs text-zinc-500">
+                <p className="truncate text-sm font-medium">{value.name}</p>
+                <p className="ww-num text-[11px] text-muted-foreground">
                   {formatBytes(value.size)} · {preview.rows.toLocaleString()} row{preview.rows === 1 ? "" : "s"} · {preview.columns.length} column{preview.columns.length === 1 ? "" : "s"}
                 </p>
               </div>
@@ -163,30 +162,33 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
             <button
               type="button"
               onClick={clear}
-              className="text-xs font-medium text-zinc-500 hover:text-zinc-900"
+              className="ww-label text-muted-foreground hover:text-foreground"
             >
-              Remove
+              [ Remove ]
             </button>
           </div>
         ) : (
           <>
-            <div className="grid h-11 w-11 place-items-center rounded-full bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-200">
+            <div className="grid h-11 w-11 place-items-center border border-foreground/40 bg-background text-foreground">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
               </svg>
             </div>
-            <p className="mt-3 text-sm text-zinc-700">
-              <span className="font-medium">Drop your CSV here</span> or <span className="font-medium text-emerald-700">browse</span>
+            <p className="mt-4 text-sm">
+              Drop your CSV here or{" "}
+              <span className="font-medium text-accent underline underline-offset-4">
+                browse
+              </span>
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
-              Required columns: <span className="font-mono">date, item, quantity</span> · up to 5 MB
+            <p className="ww-num mt-1 text-[11px] text-muted-foreground">
+              Required columns: date, item, quantity &middot; up to 5 MB
             </p>
           </>
         )}
       </div>
 
       {error && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <p className="border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {error}
         </p>
       )}

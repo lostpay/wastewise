@@ -19,7 +19,7 @@ services:
         value: accounts/fireworks/models/llama-v3p1-8b-instruct
       - key: LLM_API_KEY
         sync: false
-      - key: USDA_API_KEY
+      - key: FRED_API_KEY
         sync: false
       - key: KROGER_CLIENT_ID
         sync: false

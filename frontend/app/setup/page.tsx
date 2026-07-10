@@ -72,32 +72,37 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-          Step 1
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+        <p className="ww-label text-accent">§ I &mdash; Setup</p>
+        <h2 className="font-heading mt-1 text-3xl font-semibold">
           Dataset Setup
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <div className="ww-rule mt-3 w-full text-foreground/40" />
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Upload your sales CSV, or click{" "}
-          <span className="font-medium text-zinc-700">Use demo dataset</span> to
+          <span className="font-medium text-foreground">Use demo dataset</span> to
           walk the full flow with bundled sample data.
         </p>
       </div>
 
-      <CsvDropzone value={file} onChange={setFile} disabled={loading} />
+      <div>
+        <p className="ww-label mb-2">1.1 &mdash; Sales history</p>
+        <CsvDropzone value={file} onChange={setFile} disabled={loading} />
+      </div>
 
-      <LocationPicker value={location} onChange={(v) => set({ location: v })} />
+      <div>
+        <p className="ww-label mb-2">1.2 &mdash; Location</p>
+        <LocationPicker value={location} onChange={(v) => set({ location: v })} />
+      </div>
 
       <div className="space-y-2">
-        <Label htmlFor="horizon" className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Horizon
+        <Label htmlFor="horizon" className="ww-label">
+          1.3 &mdash; Horizon
         </Label>
         <select
           id="horizon"
-          className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          className="ww-num h-9 w-full border border-foreground/25 bg-card px-3 text-sm focus:border-accent focus:outline-none"
           value={horizon}
           onChange={(e) => set({ horizon: e.target.value as Horizon })}
         >
@@ -107,24 +112,24 @@ export default function SetupPage() {
       </div>
 
       {error && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
 
-      <div className="flex flex-wrap gap-3 pt-2">
+      <div className="flex flex-wrap gap-3 border-t border-dashed border-foreground/20 pt-4">
         <Button
           onClick={onUpload}
           disabled={!file || loading}
-          className="bg-zinc-900 text-white hover:bg-zinc-700"
+          className="bg-foreground text-background hover:bg-foreground/80"
         >
-          {loading ? "Uploading..." : "Upload"}
+          {loading ? "Uploading..." : "Upload & continue"}
         </Button>
         <Button
           variant="secondary"
           onClick={onDemo}
           disabled={loading}
-          className="border border-zinc-200"
+          className="border border-foreground/25 bg-transparent hover:bg-foreground/5"
         >
           Use demo dataset
         </Button>

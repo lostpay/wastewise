@@ -1,7 +1,7 @@
 """Market-agnostic price fallback derived from a dataset's own historical
 `price` column.
 
-Kroger/USDA only make sense for US grocery items. When a dataset contains
+Kroger/FRED only make sense for US grocery items. When a dataset contains
 non-US items (e.g. Mutton, Paneer, Rohu Fish), those APIs return nothing, and
 sourcing degrades to a silent $0.00 line. This adapter uses only data the
 restaurant already provided -- never fabricated -- as a last-resort

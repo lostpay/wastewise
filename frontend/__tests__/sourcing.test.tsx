@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { renderWithWizard } from "./test-utils";
 
 const push = vi.fn();
@@ -35,7 +35,10 @@ describe("Sourcing screen", () => {
       { item: "pork", qty: 118 },
       { item: "chicken", qty: 196 },
     ]);
-    expect(await screen.findAllByText("Kroger")).toHaveLength(3);
+    // One supplier badge per row (3 rows). The legend at the bottom mentions
+    // "Kroger" once more, so scope the query to the table itself.
+    const table = await screen.findByRole("table");
+    expect(within(table).getAllByText("Kroger")).toHaveLength(3);
     expect(screen.getByText(/\$92/)).toBeInTheDocument(); // savings
   });
 

@@ -8,10 +8,14 @@ export function RedirectNotice({ target, reason }: RedirectNoticeProps) {
     <div
       role="status"
       aria-live="polite"
-      className="rounded-xl border border-zinc-200 bg-white p-6 text-center"
+      className="border border-foreground/25 bg-card p-6"
     >
-      <p className="text-sm font-medium text-zinc-900">{reason}</p>
-      <p className="mt-1 text-xs text-zinc-500">Redirecting to {target}…</p>
+      <p className="ww-label">§ Redirect</p>
+      <div className="ww-rule mt-2 text-foreground/40" />
+      <p className="mt-3 text-sm font-medium">{reason}</p>
+      <p className="ww-num mt-1 text-[11px] text-muted-foreground">
+        &rarr; sending you to {target}...
+      </p>
     </div>
   );
 }

@@ -29,7 +29,7 @@ def test_check_sources_all_live():
 def test_check_sources_flags_dead_wholesale():
     statuses = check_sources(_DeadWholesale(), _OkRetail())
     by_name = {s.name: s for s in statuses}
-    assert by_name["usda"].live is False
+    assert by_name["fred"].live is False
     assert by_name["kroger"].live is True
 
 
