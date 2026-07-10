@@ -36,3 +36,14 @@ def test_source_order_falls_back_to_market_when_no_retail():
                         _Wholesale(), _NoRetail(), _FakeLLM(), "loc")
     assert resp.lines[0].supplier == "Market"
     assert resp.lines[0].unit_price == 2.0
+
+
+class _RaisingLLM:
+    def complete(self, system, user):
+        raise RuntimeError("simulated LLM outage")
+
+
+def test_source_order_fallback_note_uses_retail_average_language():
+    resp = source_order([{"item": "cabbage", "qty": 4}],
+                        _Wholesale(), _NoRetail(), _RaisingLLM(), "loc")
+    assert resp.lines[0].note == "At or above the US retail average."

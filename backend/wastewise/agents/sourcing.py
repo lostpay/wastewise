@@ -1,7 +1,8 @@
 from wastewise.models import POLine, SourcingResponse
 
 SYSTEM = ("You write one short English sentence explaining how a chosen supplier "
-          "price compares to the market benchmark. Respond with plain text only.")
+          "price compares to the US retail average benchmark (BLS, via FRED). "
+          "Respond with plain text only.")
 
 
 def _note(llm, item: str, unit_price: float, benchmark: float | None) -> str:
@@ -12,8 +13,8 @@ def _note(llm, item: str, unit_price: float, benchmark: float | None) -> str:
     except Exception:
         if benchmark and unit_price < benchmark:
             pct = round((benchmark - unit_price) / benchmark * 100)
-            return f"{pct}% under market benchmark."
-        return "At or above market benchmark."
+            return f"{pct}% under the US retail average."
+        return "At or above the US retail average."
 
 
 def source_order(items: list[dict], wholesale, retail, llm,
