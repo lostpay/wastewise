@@ -79,8 +79,3 @@ def test_currency_conversion_applied_on_ingest():
 def test_unknown_currency_passes_through_as_usd():
     src = HistoricalPriceSource(_records(), currency="XYZ")
     assert src.get_wholesale_price("mutton") == 610.0
-
-
-def test_known_items_exposes_the_set_used_for_savings_filtering():
-    src = HistoricalPriceSource(_records())
-    assert src.known_items == {"mutton"}  # rice has no price -> excluded

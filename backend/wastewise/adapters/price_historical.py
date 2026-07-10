@@ -34,14 +34,6 @@ class HistoricalPriceSource:
                            for item, prices in by_item.items()}
         self._display_name = display_name
 
-    @property
-    def known_items(self) -> set[str]:
-        """Items this source has a historical average for. Sourcing uses
-        this to exclude historical-only benchmarks from the "savings vs.
-        US retail average" total -- comparing a locally-averaged price to
-        a US-retail benchmark isn't a real market comparison."""
-        return set(self._avg_price)
-
     def get_wholesale_price(self, item: str) -> float | None:
         return self._avg_price.get(item.lower())
 

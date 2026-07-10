@@ -34,18 +34,23 @@ function PriceCell({ line }: { line: POLine }) {
   const pct = hasBenchmark
     ? ((line.unit_price - line.benchmark!) / line.benchmark!) * 100
     : 0;
+  const roundedPct = Math.round(Math.abs(pct));
   const isUnder = pct < 0;
+  // Suppress a "+0% vs. avg" line: when the unit price *is* the benchmark
+  // (e.g. a Market fallback row), the delta is noise. Fall through to the
+  // "benchmark" hint instead.
+  const showDelta = hasBenchmark && roundedPct > 0;
   return (
     <div className="flex flex-col items-end gap-0.5">
       <span className="ww-num text-sm">${line.unit_price.toFixed(2)}</span>
-      {hasBenchmark ? (
+      {showDelta ? (
         <span
           className={`ww-num text-[10px] ${
             isUnder ? "text-emerald-700" : "text-muted-foreground"
           }`}
         >
           {isUnder ? "−" : "+"}
-          {Math.abs(pct).toFixed(0)}% vs. avg
+          {roundedPct}% vs. avg
         </span>
       ) : isFallback ? (
         <span className="text-[10px] italic text-muted-foreground">benchmark</span>
