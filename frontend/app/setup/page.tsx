@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { uploadCsv, ApiError } from "@/lib/api";
-import { setDemoMode } from "@/lib/demo";
+import { setDemoMode, clearDemoServed } from "@/lib/demo";
 import type { Currency, Horizon, UploadResponse } from "@/lib/types";
 import { CURRENCY_OPTIONS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export default function SetupPage() {
     cleared.current = true;
     if (datasetId) {
       setDemoMode(false);
+      clearDemoServed();
       set({ datasetId: null, summary: null, forecast: null, sourcing: null, rationale: null });
     }
   }, [hydrated, datasetId, set]);

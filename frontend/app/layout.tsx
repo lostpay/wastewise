@@ -3,6 +3,7 @@ import { IBM_Plex_Sans, IBM_Plex_Mono, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import { WizardProvider } from "@/lib/store";
 import { Stepper } from "@/components/stepper";
+import { DemoBanner } from "@/components/demo-banner";
 
 const sans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </div>
           </header>
+          <DemoBanner />
 
           <div className="mx-auto flex w-full max-w-6xl flex-col items-start gap-0 px-4 py-8 md:flex-row md:px-6 md:py-10">
             <aside className="w-full shrink-0 border border-foreground/20 bg-sidebar p-5 md:sticky md:top-8 md:w-64">

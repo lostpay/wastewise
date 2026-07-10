@@ -1,5 +1,5 @@
 import type { UploadResponse, ForecastResponse, SourcingResponse, RationaleResponse, ForecastAdjustedItem, POLine, Horizon, Currency } from "./types";
-import { DEMO_UPLOAD, DEMO_FORECAST, DEMO_SOURCING, DEMO_RATIONALE, isDemoMode } from "./demo";
+import { DEMO_UPLOAD, DEMO_FORECAST, DEMO_SOURCING, DEMO_RATIONALE, isDemoMode, markDemoServed } from "./demo";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -13,15 +13,22 @@ function base(): string {
 }
 
 async function call<T>(path: string, init: RequestInit, demo: T): Promise<T> {
-  if (isDemoMode()) return demo;
+  if (isDemoMode()) {
+    markDemoServed();
+    return demo;
+  }
   let res: Response;
   try {
     res = await fetch(base() + path, init);
   } catch {
+    markDemoServed();
     return demo; // connectivity failure -> demo fallback
   }
   if (res.ok) return (await res.json()) as T;
-  if (res.status >= 500) return demo; // server/upstream down -> demo fallback
+  if (res.status >= 500) {
+    markDemoServed();
+    return demo; // server/upstream down -> demo fallback
+  }
   const body = await res.json().catch(() => ({}));
   throw new ApiError(res.status, formatDetail(body) ?? `Request failed (${res.status})`);
 }
