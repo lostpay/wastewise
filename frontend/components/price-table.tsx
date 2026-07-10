@@ -40,8 +40,7 @@ function PriceCell({ supplier, unitPrice }: { supplier: string; unitPrice: numbe
 
 function noteText(line: POLine): string {
   if (line.unit_price === 0) return "No pricing available.";
-  if (line.supplier === "Market") return "Using BLS national average as reference.";
-  if (line.note === "At or above market benchmark.") return "At or above US retail average.";
+  if (line.supplier === "Market") return "Using the US retail average as reference.";
   return line.note;
 }
 
