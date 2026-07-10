@@ -121,12 +121,30 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const initial = useMemo(() => parseLatLon(value) ?? { lat: 40.7, lng: -74.0 }, [value]);
   const [point, setPoint] = useState(initial);
   const [label, setLabel] = useState("");
+  // Buffer for the manual lat,lon field so we don't fight the user mid-type.
+  // Kept as a raw string so pasting "24.18, 120.64" is allowed even though
+  // parseLatLon needs it comma-only.
+  const [manual, setManual] = useState(formatLatLon(initial.lat, initial.lng));
 
   const commit = useCallback(
     (lat: number, lng: number, nextLabel?: string) => {
       setPoint({ lat, lng });
+      setManual(formatLatLon(lat, lng));
       onChange(formatLatLon(lat, lng));
       if (nextLabel !== undefined) setLabel(nextLabel);
+    },
+    [onChange],
+  );
+
+  const onManualChange = useCallback(
+    (raw: string) => {
+      setManual(raw);
+      const parsed = parseLatLon(raw.replace(/\s+/g, ""));
+      if (parsed) {
+        setPoint(parsed);
+        onChange(formatLatLon(parsed.lat, parsed.lng));
+        setLabel("");
+      }
     },
     [onChange],
   );
@@ -172,10 +190,24 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
             <ReverseGeocode lat={point.lat} lng={point.lng} onLabel={setLabel} />
           </Map>
         </div>
-        <p className="ww-num text-[11px] text-muted-foreground">
-          {formatLatLon(point.lat, point.lng)}
-          {label && <span className="text-muted-foreground/70"> — {label}</span>}
-        </p>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="loc-manual" className="ww-label whitespace-nowrap">
+            or paste lat,lon
+          </Label>
+          <Input
+            id="loc-manual"
+            value={manual}
+            onChange={(e) => onManualChange(e.target.value)}
+            placeholder="24.1819,120.6459"
+            className="ww-num h-8 border-foreground/25 bg-card text-[12px]"
+          />
+        </div>
+        {label && (
+          <p className="ww-num text-[11px] text-muted-foreground">
+            {formatLatLon(point.lat, point.lng)}
+            <span className="text-muted-foreground/70"> — {label}</span>
+          </p>
+        )}
       </APIProvider>
     </div>
   );

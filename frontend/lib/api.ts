@@ -23,7 +23,24 @@ async function call<T>(path: string, init: RequestInit, demo: T): Promise<T> {
   if (res.ok) return (await res.json()) as T;
   if (res.status >= 500) return demo; // server/upstream down -> demo fallback
   const body = await res.json().catch(() => ({}));
-  throw new ApiError(res.status, (body as { detail?: string }).detail ?? `Request failed (${res.status})`);
+  throw new ApiError(res.status, formatDetail(body) ?? `Request failed (${res.status})`);
+}
+
+// FastAPI returns a string `detail` for HTTPException and an array of
+// {loc, msg, type, ...} for Pydantic validation errors. Rendering the array
+// via a template string produces "[object Object]", so extract a readable
+// message here.
+function formatDetail(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const detail = (body as { detail?: unknown }).detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => (d && typeof d === "object" && "msg" in d ? String((d as { msg: unknown }).msg) : String(d)))
+      .filter(Boolean)
+      .join("; ") || null;
+  }
+  return null;
 }
 
 function jsonInit(payload: unknown): RequestInit {
