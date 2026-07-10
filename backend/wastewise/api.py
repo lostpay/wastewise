@@ -64,6 +64,10 @@ class _LocatedRequest(BaseModel):
     @field_validator("location")
     @classmethod
     def _valid_location(cls, v: str) -> str:
+        # Google Maps and human paste habits produce "lat, lon" with a space
+        # after the comma. Strip whitespace before the regex so we don't 422
+        # on a value the regex would otherwise accept.
+        v = v.replace(" ", "").strip()
         # location is interpolated into an outbound weather.gov URL path;
         # pin it to "lat,lon" so untrusted input can't reshape the request.
         if not _LOCATION_RE.match(v):
