@@ -22,8 +22,9 @@ def run_forecast(records: list[SalesRecord], horizon: str, location: str,
 
 
 def run_sourcing(items: list[dict], location: str, wholesale_src, retail_src,
-                 llm) -> SourcingResponse:
-    return source_order(items, wholesale_src, retail_src, llm, location)
+                 llm, historical_items: set[str] | None = None) -> SourcingResponse:
+    return source_order(items, wholesale_src, retail_src, llm, location,
+                        historical_items=historical_items)
 
 
 def run_rationale(items: list[AdjustedItem], lines: list[POLine], savings: float,

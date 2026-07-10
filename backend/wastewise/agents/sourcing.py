@@ -59,7 +59,9 @@ def _choose_offer(llm, item: str, offers: list[SupplierPrice],
 
 
 def source_order(items: list[dict], wholesale, retail, llm,
-                 location: str) -> SourcingResponse:
+                 location: str,
+                 historical_items: set[str] | None = None) -> SourcingResponse:
+    historical_items = {i.lower() for i in (historical_items or set())}
     prepared = []
     for entry in items:
         item, qty = entry["item"], float(entry["qty"])
@@ -93,7 +95,14 @@ def source_order(items: list[dict], wholesale, retail, llm,
             supplier, unit_price = "No price data", 0.0
         line_total = round(unit_price * qty, 2)
         total += line_total
-        if benchmark is not None and unit_price < benchmark:
+        # Only count savings when the benchmark is a real US retail
+        # average (FRED). Historical-average benchmarks are the item's own
+        # past purchase price -- comparing an offer to itself isn't a
+        # market saving, and used to inflate the total when the CSV was
+        # denominated in a non-USD currency.
+        if (benchmark is not None
+                and unit_price < benchmark
+                and item.lower() not in historical_items):
             savings += (benchmark - unit_price) * qty
         lines.append(POLine(item=item, qty=qty, supplier=supplier,
                             unit_price=unit_price, line_total=line_total,

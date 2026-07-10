@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { uploadCsv, ApiError } from "@/lib/api";
 import { setDemoMode } from "@/lib/demo";
-import type { Horizon, UploadResponse } from "@/lib/types";
+import type { Currency, Horizon, UploadResponse } from "@/lib/types";
+import { CURRENCY_OPTIONS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { CsvDropzone } from "@/components/ui/csv-dropzone";
 import { Label } from "@/components/ui/label";
@@ -18,7 +19,7 @@ const LocationPicker = dynamic(
 
 export default function SetupPage() {
   const router = useRouter();
-  const { location, horizon, datasetId, hydrated, set } = useWizard();
+  const { location, horizon, currency, datasetId, hydrated, set } = useWizard();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,8 +98,31 @@ export default function SetupPage() {
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="currency" className="ww-label">
+          1.3 &mdash; Data currency
+        </Label>
+        <select
+          id="currency"
+          className="ww-num h-9 w-full border border-foreground/25 bg-card px-3 text-sm focus:border-accent focus:outline-none"
+          value={currency}
+          onChange={(e) => set({ currency: e.target.value as Currency })}
+        >
+          {CURRENCY_OPTIONS.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Currency of the <span className="ww-num">price</span> column in your
+          CSV. Non-USD values are converted to USD before comparison to Kroger
+          and BLS/FRED benchmarks.
+        </p>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="horizon" className="ww-label">
-          1.3 &mdash; Horizon
+          1.4 &mdash; Horizon
         </Label>
         <select
           id="horizon"

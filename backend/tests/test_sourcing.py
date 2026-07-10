@@ -29,6 +29,19 @@ def test_source_order_picks_cheapest_and_computes_savings():
     assert line.live is False  # _FakeLLM's reply isn't valid selection JSON
 
 
+def test_source_order_excludes_historical_items_from_savings():
+    # Same setup as the picks-cheapest test, but marks the item as backed by
+    # the historical fallback. Savings should stay $0 because comparing a
+    # historical-average benchmark to a real Kroger price is not a real
+    # market saving (and used to inflate savings for non-USD CSVs).
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _Wholesale(), _Retail(), _FakeLLM(), "loc",
+                        historical_items={"cabbage"})
+    assert resp.lines[0].line_total == 15.0
+    assert resp.total == 15.0
+    assert resp.savings == 0.0
+
+
 class _NoRetail:
     def get_retail_prices(self, item, location): return []
 

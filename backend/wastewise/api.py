@@ -84,6 +84,11 @@ class SourcingItem(BaseModel):
 class SourcingRequest(_LocatedRequest):
     items: list[SourcingItem]
     dataset_id: str | None = None
+    # ISO-4217 code for the historical `price` column in the uploaded CSV.
+    # Non-USD values get converted to USD before being used as a benchmark
+    # or displayed as a unit price. See wastewise/currency.py for supported
+    # codes; unknown values pass through as-is.
+    currency: str = "USD"
 
 
 class RationaleRequest(BaseModel):
@@ -125,16 +130,19 @@ def forecast(req: ForecastRequest, deps: dict = Depends(get_deps)):
 @app.post("/sourcing")
 def sourcing(req: SourcingRequest, deps: dict = Depends(get_deps)):
     wholesale, retail = deps["wholesale"], deps["retail"]
+    historical_items: set[str] = set()
     if req.dataset_id:
         try:
             records = deps["store"].load(req.dataset_id)
         except KeyError:
             raise HTTPException(status_code=404, detail="dataset not found")
-        historical = HistoricalPriceSource(records)
+        historical = HistoricalPriceSource(records, currency=req.currency)
+        historical_items = historical.known_items
         wholesale = FallbackWholesale(wholesale, historical)
         retail = FallbackRetail(retail, historical)
     return run_sourcing([i.model_dump() for i in req.items], req.location,
-                        wholesale, retail, deps["llm"])
+                        wholesale, retail, deps["llm"],
+                        historical_items=historical_items)
 
 
 @app.post("/rationale")
