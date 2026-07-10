@@ -6,7 +6,7 @@ from wastewise.models import SalesRecord, ForecastItem
 from wastewise.forecasting.features import build_frame
 from wastewise.forecasting.baseline import baseline_forecast
 
-FEATURES = ["dow", "weekofyear", "month", "lag7", "roll7"]
+FEATURES = ["dow", "weekofyear", "month", "lag7", "roll7", "item_code", "is_holiday"]
 
 
 def _train(df: pd.DataFrame) -> XGBRegressor:
@@ -17,10 +17,12 @@ def _train(df: pd.DataFrame) -> XGBRegressor:
     return model
 
 
-def _future_rows(df_item: pd.DataFrame, horizon_days: int) -> pd.DataFrame:
+def _future_rows(df_item: pd.DataFrame, horizon_days: int,
+                 holiday_dates: frozenset) -> pd.DataFrame:
     """Build feature rows for the next horizon_days for a single item."""
     last_date = df_item["date"].max()
     recent_mean = df_item["quantity"].tail(7).mean()
+    item_code = int(df_item["item_code"].iloc[0])
     hist = {r["date"].date(): r["quantity"] for _, r in df_item.iterrows()}
     rows = []
     for i in range(1, horizon_days + 1):
@@ -32,17 +34,20 @@ def _future_rows(df_item: pd.DataFrame, horizon_days: int) -> pd.DataFrame:
             "month": d.month,
             "lag7": hist.get(lag7_date, recent_mean),
             "roll7": recent_mean,
+            "item_code": item_code,
+            "is_holiday": 1 if d.date() in holiday_dates else 0,
         })
     return pd.DataFrame(rows)
 
 
 def forecast_items(records: list[SalesRecord], horizon_days: int,
-                   safety_frac: float = 0.15) -> tuple[list[ForecastItem], float]:
-    df = build_frame(records)
+                   safety_frac: float = 0.15,
+                   holiday_dates: frozenset = frozenset()) -> tuple[list[ForecastItem], float]:
+    df = build_frame(records, holiday_dates)
     model = _train(df)
     items: list[ForecastItem] = []
     for item, g in df.groupby("item"):
-        future = _future_rows(g, horizon_days)
+        future = _future_rows(g, horizon_days, holiday_dates)
         pred = float(np.clip(model.predict(future[FEATURES]).sum(), 0, None))
         base = baseline_forecast(records, item, horizon_days)
         buffer = safety_frac * pred
