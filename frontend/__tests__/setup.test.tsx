@@ -22,13 +22,14 @@ describe("Setup screen", () => {
     expect(JSON.parse(window.sessionStorage.getItem("ww_state")!).datasetId).toBe("demo");
   });
 
-  it("clears prior forecast/sourcing when a new dataset is loaded", async () => {
+  it("clears prior forecast/sourcing/rationale when a new dataset is loaded", async () => {
     // Seed state as if a previous run already produced results.
     renderWithWizard(<SetupPage />, {
       initial: {
         datasetId: "old",
-        forecast: { baseline_delta: 0.1, items: [{ item: "pork", forecast: 1, adjusted_qty: 1, reason: "" }] },
+        forecast: { baseline_delta: 0.1, items: [{ item: "pork", forecast: 1, adjusted_qty: 1, reason: "", live: true }] },
         sourcing: { total: 9, savings: 1, lines: [] },
+        rationale: { paragraph: "Stale rationale from the prior dataset.", live: true },
       },
     });
     await userEvent.click(screen.getByRole("button", { name: /use demo dataset/i }));
@@ -37,6 +38,7 @@ describe("Setup screen", () => {
     expect(state.datasetId).toBe("demo");
     expect(state.forecast).toBeNull();
     expect(state.sourcing).toBeNull();
+    expect(state.rationale).toBeNull();
   });
 
   it("shows the backend error message on a 400 upload", async () => {
