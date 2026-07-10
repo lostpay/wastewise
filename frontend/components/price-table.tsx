@@ -23,14 +23,17 @@ function SupplierCell({ supplier }: { supplier: string }) {
   );
 }
 
-function PriceCell({ supplier, unitPrice }: { supplier: string; unitPrice: number }) {
+function PriceCell({ supplier, unitPrice, unit }: { supplier: string; unitPrice: number; unit?: string }) {
   const isFallback = supplier === "Market";
   if (unitPrice === 0) {
     return <span className="ww-num text-muted-foreground">&mdash;</span>;
   }
   return (
     <div className="flex flex-col items-end gap-0.5">
-      <span className="ww-num text-sm">${unitPrice.toFixed(2)}</span>
+      <span className="ww-num text-sm">
+        ${unitPrice.toFixed(2)}
+        {unit ? <span className="text-muted-foreground"> / {unit}</span> : null}
+      </span>
       {isFallback ? (
         <span className="text-[10px] italic text-muted-foreground">benchmark</span>
       ) : null}
@@ -80,7 +83,7 @@ export function PriceTable({ lines }: { lines: POLine[] }) {
                 <SupplierCell supplier={l.supplier} />
               </td>
               <td className="px-4 py-3 text-right">
-                <PriceCell supplier={l.supplier} unitPrice={l.unit_price} />
+                <PriceCell supplier={l.supplier} unitPrice={l.unit_price} unit={l.unit} />
               </td>
               <td className="px-4 py-3">
                 <NoteCell line={l} />

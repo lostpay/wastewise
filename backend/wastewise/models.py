@@ -23,6 +23,7 @@ class ForecastItem(BaseModel):
     baseline: float
     safety_buffer: float
     recommended_purchase_qty: float
+    daily: list[float] = []
 
 
 class AdjustedItem(BaseModel):
@@ -31,11 +32,20 @@ class AdjustedItem(BaseModel):
     adjusted_qty: float
     reason: str
     live: bool
+    daily: list[float] = []
+
+
+class BacktestStats(BaseModel):
+    delta: float
+    waste_avoided_units: float
+    waste_avoided_value: float | None
 
 
 class ForecastResponse(BaseModel):
     items: list[AdjustedItem]
     baseline_delta: float
+    waste_avoided_units: float = 0.0
+    waste_avoided_value: float | None = None
 
 
 class POLine(BaseModel):
@@ -46,6 +56,7 @@ class POLine(BaseModel):
     line_total: float
     note: str
     live: bool
+    unit: str = ""
 
 
 class SourcingResponse(BaseModel):
@@ -69,6 +80,7 @@ class SupplierPrice(BaseModel):
     supplier: str
     unit_price: float
     description: str = ""
+    unit: str = ""
 
 
 class RationaleResponse(BaseModel):

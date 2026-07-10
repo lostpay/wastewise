@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { runForecast, ApiError } from "@/lib/api";
 import { ForecastChart } from "@/components/forecast-chart";
+import { HistoryChart } from "@/components/history-chart";
 import { StatTile } from "@/components/stat-tile";
 import { ReasonBadge } from "@/components/reason-badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function ForecastPage() {
   const router = useRouter();
-  const { datasetId, horizon, location, forecast, hydrated, set } = useWizard();
+  const { datasetId, horizon, location, forecast, history, hydrated, set } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -68,11 +69,24 @@ export default function ForecastPage() {
         <Skeleton className="h-80 w-full" />
       ) : (
         <>
-          <StatTile
-            label="Forecast accuracy gain vs. simple seasonal baseline"
-            value={`${Math.round(forecast.baseline_delta * 100)}%`}
-            hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Higher is better."
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <StatTile
+              label="Forecast accuracy gain vs. simple seasonal baseline"
+              value={`${Math.round(forecast.baseline_delta * 100)}%`}
+              hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Higher is better."
+            />
+            {(forecast.waste_avoided_units ?? 0) > 0 ? (
+              <StatTile
+                label="Over-ordering avoided vs. baseline"
+                value={
+                  forecast.waste_avoided_value != null
+                    ? `$${forecast.waste_avoided_value.toFixed(2)}`
+                    : `${(forecast.waste_avoided_units ?? 0).toFixed(0)} units`
+                }
+                hint="Same 7-day holdout: what a naive same-weekday ordering policy would have over-bought, minus this model's over-buy — both with the 15% safety buffer."
+              />
+            ) : null}
+          </div>
           <div className="border border-foreground/20 bg-card">
             <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
               <p className="ww-label">Fig. 1 — Per-item quantities</p>
@@ -89,6 +103,11 @@ export default function ForecastPage() {
               <ForecastChart items={forecast.items} />
             </div>
           </div>
+          {history && history.length > 0 ? (
+            <div className="border border-foreground/20 bg-card">
+              <HistoryChart history={history} items={forecast.items} />
+            </div>
+          ) : null}
           <div>
             <p className="ww-label mb-2">Tbl. 1 — Per-item detail</p>
             <div className="border border-foreground/20">

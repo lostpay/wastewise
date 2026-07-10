@@ -55,6 +55,24 @@ export default function OrderPage() {
     URL.revokeObjectURL(url);
   }
 
+  function round2(n: number) {
+    return Math.round(n * 100) / 100;
+  }
+
+  function updateQty(index: number, qty: number) {
+    if (!sourcing) return;
+    const lines = sourcing.lines.map((l, i) =>
+      i === index ? { ...l, qty, line_total: round2(l.unit_price * qty) } : l,
+    );
+    const total = round2(lines.reduce((s, l) => s + l.line_total, 0));
+    // A manual quantity override invalidates the AI rationale, which describes
+    // the originally sourced order and cites its totals. Drop it (and suppress a
+    // refetch) so its figures can't contradict the edited table.
+    started.current = true;
+    set({ sourcing: { ...sourcing, lines, total }, rationale: null });
+    setApproved(false);
+  }
+
   return (
     <div className="space-y-8">
       <Link
@@ -98,7 +116,7 @@ export default function OrderPage() {
       <div>
         <p className="ww-label mb-2">Tbl. 3 — Purchase order draft</p>
         <div className="border border-foreground/20 bg-card">
-          <POTable lines={sourcing.lines} total={sourcing.total} />
+          <POTable lines={sourcing.lines} total={sourcing.total} onQtyChange={updateQty} />
         </div>
       </div>
 

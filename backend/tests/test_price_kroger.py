@@ -111,3 +111,10 @@ def test_get_retail_prices_returns_multiple_candidates_with_descriptions(tmp_pat
     assert prices[1].unit_price == 4.5
     assert prices[1].description == "Kroger Chicken Breast"
     assert products.calls.last.request.url.params["filter.limit"] == "5"
+
+
+def test_parse_prices_includes_package_size():
+    payload = {"data": [{"description": "Green Cabbage",
+                         "items": [{"price": {"regular": 1.4}, "size": "1 lb"}]}]}
+    out = KrogerRetail._parse_prices(payload)
+    assert out[0].unit == "1 lb"

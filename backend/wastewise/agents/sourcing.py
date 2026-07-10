@@ -86,17 +86,17 @@ def source_order(items: list[dict], wholesale, retail, llm,
     lines = []
     for (item, qty, benchmark, offers), (offer, note, live) in zip(prepared, resolved):
         if offer is not None:
-            supplier, unit_price = offer.supplier, offer.unit_price
+            supplier, unit_price, unit = offer.supplier, offer.unit_price, offer.unit
         elif benchmark is not None:
-            supplier, unit_price = "Market", benchmark
+            supplier, unit_price, unit = "Market", benchmark, ""
         else:
-            supplier, unit_price = "No price data", 0.0
+            supplier, unit_price, unit = "No price data", 0.0, ""
         line_total = round(unit_price * qty, 2)
         total += line_total
         if benchmark is not None and unit_price < benchmark:
             savings += (benchmark - unit_price) * qty
         lines.append(POLine(item=item, qty=qty, supplier=supplier,
                             unit_price=unit_price, line_total=line_total,
-                            note=note, live=live))
+                            note=note, live=live, unit=unit))
     return SourcingResponse(lines=lines, total=round(total, 2),
                             savings=round(savings, 2))
