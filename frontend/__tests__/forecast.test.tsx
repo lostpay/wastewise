@@ -31,6 +31,8 @@ describe("Forecast screen", () => {
     expect(await screen.findByText("cabbage")).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByText(/Rain forecast lowers dine-in demand/i).length).toBeGreaterThan(0));
     expect(screen.getByText(/18%/)).toBeInTheDocument(); // baseline_delta 0.18 -> "18%"
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /model/i })).toBeInTheDocument();
   });
 
   it("surfaces a 4xx error inline instead of an infinite skeleton", async () => {

@@ -92,57 +92,59 @@ export default function ForecastPage() {
           <div>
             <p className="ww-label mb-2">Tbl. 1 — Per-item detail</p>
             <div className="border border-foreground/20">
-              <div className="grid grid-cols-[1fr_5rem_5rem_5rem_1fr] items-center gap-4 border-b-2 border-foreground/60 bg-muted px-3 py-2">
-                <span className="ww-label">Item</span>
-                <span className="ww-label text-right">Model</span>
-                <span className="ww-label text-right">Rec.</span>
-                <span className="ww-label text-right">Δ</span>
-                <span className="ww-label hidden text-right sm:block">Note</span>
-              </div>
-              <ul>
-                {forecast.items.map((it, idx) => {
-                  const delta = it.adjusted_qty - it.forecast;
-                  const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
-                  const sign = delta > 0 ? "+" : "";
-                  // Down = saved-from-waste (green). Up = justified extra
-                  // spend (amber). Zero = muted. Deliberately not "up=good"
-                  // — this is a waste-reduction app, so shrinking a
-                  // purchase is the product's success state.
-                  const deltaColor =
-                    delta < 0
-                      ? "text-emerald-700"
-                      : delta > 0
-                        ? "text-amber-700"
-                        : "text-muted-foreground";
-                  return (
-                    <li
-                      key={it.item}
-                      className={`grid grid-cols-[1fr_5rem_5rem_5rem_1fr] items-center gap-4 px-3 py-3 ${
-                        idx > 0 ? "border-t border-dashed border-foreground/15" : ""
-                      }`}
-                    >
-                      <span className="text-sm font-medium capitalize">{it.item}</span>
-                      <span className="ww-num text-right text-sm text-muted-foreground">
-                        {it.forecast.toFixed(1)}
-                      </span>
-                      <span className="ww-num text-right text-sm font-semibold">
-                        {it.adjusted_qty.toFixed(1)}
-                      </span>
-                      <span className={`ww-num text-right text-xs ${deltaColor}`}>
-                        {sign}
-                        {delta.toFixed(1)}
-                        <span className="ml-1 opacity-70">
-                          ({sign}
-                          {deltaPct.toFixed(0)}%)
-                        </span>
-                      </span>
-                      <span className="hidden justify-end sm:flex">
-                        <ReasonBadge reason={it.reason} />
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-foreground/60 bg-muted">
+                    <th className="ww-label px-4 py-2 text-left">Item</th>
+                    <th className="ww-label px-4 py-2 text-right">Model</th>
+                    <th className="ww-label px-4 py-2 text-right">Rec.</th>
+                    <th className="ww-label px-4 py-2 text-right">Δ</th>
+                    <th className="ww-label hidden px-4 py-2 text-right sm:table-cell">Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {forecast.items.map((it, idx) => {
+                    const delta = it.adjusted_qty - it.forecast;
+                    const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
+                    const sign = delta > 0 ? "+" : "";
+                    // Down = saved-from-waste (green). Up = justified extra
+                    // spend (amber). Zero = muted. Deliberately not "up=good"
+                    // — this is a waste-reduction app, so shrinking a
+                    // purchase is the product's success state.
+                    const deltaColor =
+                      delta < 0
+                        ? "text-emerald-700"
+                        : delta > 0
+                          ? "text-amber-700"
+                          : "text-muted-foreground";
+                    return (
+                      <tr
+                        key={it.item}
+                        className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium capitalize">{it.item}</td>
+                        <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
+                          {it.forecast.toFixed(1)}
+                        </td>
+                        <td className="ww-num px-4 py-3 text-right text-sm font-semibold">
+                          {it.adjusted_qty.toFixed(1)}
+                        </td>
+                        <td className={`ww-num px-4 py-3 text-right text-xs ${deltaColor}`}>
+                          {sign}
+                          {delta.toFixed(1)}
+                          <span className="ml-1 opacity-70">
+                            ({sign}
+                            {deltaPct.toFixed(0)}%)
+                          </span>
+                        </td>
+                        <td className="hidden px-4 py-3 text-right align-top sm:table-cell">
+                          <ReasonBadge reason={it.reason} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
           <div className="flex justify-end">
