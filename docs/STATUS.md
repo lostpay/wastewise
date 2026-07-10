@@ -19,11 +19,11 @@ Submission deadline: **2026-07-11, 15:00 UTC** (~24 hours from now).
 - **Data adapters** (all with FileCache + graceful fallback)
   - NOAA weather via weather.gov ([weather_noaa.py](../backend/wastewise/adapters/weather_noaa.py))
   - US federal holidays ([holidays.py](../backend/wastewise/adapters/holidays.py))
-  - USDA wholesale prices via MARS API ([price_usda.py](../backend/wastewise/adapters/price_usda.py))
+  - US retail average prices via FRED/BLS series ([price_fred.py](../backend/wastewise/adapters/price_fred.py))
   - Kroger retail prices with OAuth + lat,lon→locationId resolution ([price_kroger.py](../backend/wastewise/adapters/price_kroger.py))
 - **LLM agents**
   - Adjustment agent — sends recommendations + weather + holidays, expects per-item JSON ([adjustment.py](../backend/wastewise/agents/adjustment.py))
-  - Sourcing agent — writes one-liner comparing chosen price to USDA benchmark ([sourcing.py](../backend/wastewise/agents/sourcing.py))
+  - Sourcing agent — writes one-liner comparing chosen price to the FRED/BLS benchmark ([sourcing.py](../backend/wastewise/agents/sourcing.py))
   - OpenAI-compatible client wrapper ([llm.py](../backend/wastewise/agents/llm.py)) — works against vLLM or Fireworks
   - Loud startup check — logs live vs. fallback mode at boot
 - **Pipeline orchestrator** ([pipeline.py](../backend/wastewise/pipeline.py))
@@ -109,7 +109,7 @@ Per spec §2 — do **not** attempt before submission:
 - Deep-learning forecaster (PyTorch LSTM/TFT on MI300X)
 - Accounts / auth / multi-tenant persistence
 - Live ordering / payment
-- Multi-market adapters beyond USDA/Kroger/NOAA/US holidays
+- Multi-market adapters beyond FRED/Kroger/NOAA/US holidays
 
 ---
 
@@ -152,8 +152,8 @@ Backend ([backend/.env](../backend/.env)) — real values required:
 | Key | Required for | Impact if unset |
 |---|---|---|
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | The AMD compute gate | Agent falls back to canned strings; AMD usage not demonstrated |
-| `USDA_API_KEY` | Sourcing savings figure | Savings always $0.00 |
-| `KROGER_CLIENT_ID`, `KROGER_CLIENT_SECRET` | Real retail supplier prices | "Market" fallback with USDA-benchmark pricing |
+| `FRED_API_KEY` | Sourcing savings figure | Savings always $0.00 |
+| `KROGER_CLIENT_ID`, `KROGER_CLIENT_SECRET` | Real retail supplier prices | "Market" fallback with FRED-benchmark pricing |
 
 Frontend ([frontend/.env.local](../frontend/.env.local)):
 
