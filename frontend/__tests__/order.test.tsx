@@ -46,4 +46,23 @@ describe("Order screen", () => {
     const approveButton = await screen.findByRole("button", { name: /approve/i });
     expect(approveButton).not.toBeDisabled();
   });
+
+  it("recomputes line and grand totals when a quantity is edited", async () => {
+    renderWithWizard(<OrderPage />, { initial: { datasetId: "demo", sourcing: DEMO_SOURCING } });
+    const input = screen.getByLabelText(/quantity for cabbage/i);
+    await userEvent.clear(input);
+    await userEvent.type(input, "100");
+    expect(screen.getByText(/\$140\.00/)).toBeInTheDocument(); // 100 × $1.40
+    expect(screen.getByText(/\$548\.40/)).toBeInTheDocument(); // 140 + 165.2 + 243.2
+  });
+
+  it("un-approves when the order changes after approval", async () => {
+    renderWithWizard(<OrderPage />, { initial: { datasetId: "demo", sourcing: DEMO_SOURCING } });
+    await userEvent.click(screen.getByRole("button", { name: /approve/i }));
+    expect(screen.getByText(/approved/i)).toBeInTheDocument();
+    const input = screen.getByLabelText(/quantity for cabbage/i);
+    await userEvent.clear(input);
+    await userEvent.type(input, "100");
+    expect(screen.getByRole("button", { name: /^approve$/i })).not.toBeDisabled();
+  });
 });
