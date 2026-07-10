@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import type { DatasetSummary, ForecastResponse, SourcingResponse, Horizon } from "./types";
+import type { DatasetSummary, ForecastResponse, SourcingResponse, RationaleResponse, Horizon } from "./types";
 
 const KEY = "ww_state";
 
@@ -12,6 +12,7 @@ interface WizardState {
   summary: DatasetSummary | null;
   forecast: ForecastResponse | null;
   sourcing: SourcingResponse | null;
+  rationale: RationaleResponse | null;
 }
 
 const DEFAULTS: WizardState = {
@@ -21,6 +22,7 @@ const DEFAULTS: WizardState = {
   summary: null,
   forecast: null,
   sourcing: null,
+  rationale: null,
 };
 
 interface WizardContextValue extends WizardState {

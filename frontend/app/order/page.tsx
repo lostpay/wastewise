@@ -1,23 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { poToCsv } from "@/lib/csv";
+import { runRationale } from "@/lib/api";
 import { POTable } from "@/components/po-table";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function OrderPage() {
   const router = useRouter();
-  const { sourcing, hydrated } = useWizard();
+  const { forecast, sourcing, rationale, hydrated, set } = useWizard();
   const [approved, setApproved] = useState(false);
+  const [rationaleLoading, setRationaleLoading] = useState(false);
+  const started = useRef(false);
 
   useEffect(() => {
     if (!hydrated) return;
     if (!sourcing) router.push("/sourcing");
   }, [hydrated, sourcing, router]);
+
+  useEffect(() => {
+    // Rationale is a purely additive synthesis card -- never gate Approve/
+    // Download on it, so a slow or failed call never blocks the page.
+    if (!hydrated || !forecast || !sourcing) return;
+    if (rationale || started.current) return;
+    started.current = true;
+    setRationaleLoading(true);
+    runRationale(forecast.items, sourcing.lines, sourcing.savings, sourcing.total)
+      .then((res) => set({ rationale: res }))
+      .catch(() => {
+        // Non-blocking: leave `rationale` null and simply don't render the
+        // card's content. No inline error state -- this call never gates
+        // Approve/Download per the design spec.
+      })
+      .finally(() => setRationaleLoading(false));
+  }, [hydrated, forecast, sourcing, rationale, set]);
 
   if (!hydrated) return null;
   if (!sourcing)
@@ -52,6 +73,26 @@ export default function OrderPage() {
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Review the draft, approve, and download the CSV for your supplier.
         </p>
+      </div>
+
+      <div>
+        <p className="ww-label mb-2">Purchasing rationale</p>
+        <div className="border border-foreground/20 bg-card px-4 py-4">
+          {rationaleLoading ? (
+            <Skeleton className="h-16 w-full" />
+          ) : rationale ? (
+            <div className="space-y-2">
+              <span
+                className={`ww-label ${rationale.live ? "text-accent" : "text-muted-foreground"}`}
+              >
+                {rationale.live ? "AI synthesis" : "Synthesis unavailable"}
+              </span>
+              <p className="text-sm leading-relaxed text-foreground">{rationale.paragraph}</p>
+            </div>
+          ) : (
+            <p className="text-[11px] italic text-muted-foreground">Rationale unavailable.</p>
+          )}
+        </div>
       </div>
 
       <div>
