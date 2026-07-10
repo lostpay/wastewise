@@ -13,7 +13,7 @@ from wastewise.pipeline import run_forecast, run_sourcing
 from wastewise.adapters.base import FileCache
 from wastewise.adapters.weather_noaa import NOAAWeather
 from wastewise.adapters.holidays import USHolidays
-from wastewise.adapters.price_usda import USDAWholesale
+from wastewise.adapters.price_fred import FredWholesale
 from wastewise.adapters.price_kroger import KrogerRetail
 from wastewise.agents.llm import LLMClient, format_status_banner
 
@@ -46,7 +46,7 @@ def get_deps() -> dict:
         "store": DatasetStore(s.db_path),
         "weather": NOAAWeather(cache),
         "holidays": USHolidays(),
-        "wholesale": USDAWholesale(s.usda_api_key, cache),
+        "wholesale": FredWholesale(s.fred_api_key, cache),
         "retail": KrogerRetail(s.kroger_client_id, s.kroger_client_secret, cache),
         "llm": LLMClient(s.llm_base_url, s.llm_api_key, s.llm_model),
     }

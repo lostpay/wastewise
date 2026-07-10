@@ -17,7 +17,7 @@ SERIES: dict[str, str] = {
 }
 
 
-class USDAWholesale:
+class FredWholesale:
     def __init__(self, api_key: str, cache: FileCache,
                  client: httpx.Client | None = None):
         self.api_key = api_key
