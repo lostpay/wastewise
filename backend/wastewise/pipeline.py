@@ -19,13 +19,15 @@ def run_forecast(records: list[SalesRecord], horizon: str, location: str,
     # spikes, not just flag the upcoming ones.
     holidays = holiday_src.get_holidays(first_hist, horizon_end)
     holiday_dates = frozenset(h.date for h in holidays)
-    items, delta = forecast_items(records, horizon_days, holiday_dates=holiday_dates)
+    items, stats = forecast_items(records, horizon_days, holiday_dates=holiday_dates)
     weather = [(first_future + datetime.timedelta(days=i),
                 weather_src.get_weather(first_future + datetime.timedelta(days=i), location))
                for i in range(horizon_days)]
     future_holidays = [h for h in holidays if h.date >= first_future]
     adjusted = adjust_forecast(items, weather, future_holidays, llm)
-    return ForecastResponse(items=adjusted, baseline_delta=delta)
+    return ForecastResponse(items=adjusted, baseline_delta=stats.delta,
+                            waste_avoided_units=stats.waste_avoided_units,
+                            waste_avoided_value=stats.waste_avoided_value)
 
 
 def run_sourcing(items: list[dict], location: str, wholesale_src, retail_src,
