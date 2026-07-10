@@ -24,9 +24,9 @@ export const DEMO_SOURCING: SourcingResponse = {
   total: 618.4,
   savings: 92.0,
   lines: [
-    { item: "cabbage", qty: 150, supplier: "Kroger", unit_price: 1.4, line_total: 210.0, note: "30% under market benchmark." },
-    { item: "pork", qty: 118, supplier: "Kroger", unit_price: 1.4, line_total: 165.2, note: "30% under market benchmark." },
-    { item: "chicken", qty: 196, supplier: "Kroger", unit_price: 1.24, line_total: 243.2, note: "38% under market benchmark." },
+    { item: "cabbage", qty: 150, supplier: "Kroger", unit_price: 1.4, line_total: 210.0, note: "30% under the US retail average." },
+    { item: "pork", qty: 118, supplier: "Kroger", unit_price: 1.4, line_total: 165.2, note: "30% under the US retail average." },
+    { item: "chicken", qty: 196, supplier: "Kroger", unit_price: 1.24, line_total: 243.2, note: "38% under the US retail average." },
   ],
 };
 
