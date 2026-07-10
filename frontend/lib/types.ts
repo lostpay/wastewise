@@ -18,6 +18,7 @@ export interface ForecastAdjustedItem {
   forecast: number;
   adjusted_qty: number;
   reason: string;
+  live: boolean;
 }
 
 export interface ForecastResponse {
@@ -32,10 +33,16 @@ export interface POLine {
   unit_price: number;
   line_total: number;
   note: string;
+  live: boolean;
 }
 
 export interface SourcingResponse {
   lines: POLine[];
   total: number;
   savings: number;
+}
+
+export interface RationaleResponse {
+  paragraph: string;
+  live: boolean;
 }

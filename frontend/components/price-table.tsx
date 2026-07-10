@@ -44,6 +44,19 @@ function noteText(line: POLine): string {
   return line.note;
 }
 
+function NoteCell({ line }: { line: POLine }) {
+  const text = noteText(line);
+  if (line.live) {
+    return (
+      <div className="flex flex-col gap-0.5 text-left">
+        <span className="ww-label text-accent">AI picked this</span>
+        <span className="text-[11px] leading-snug text-foreground">{text}</span>
+      </div>
+    );
+  }
+  return <span className="text-[11px] text-muted-foreground">{text}</span>;
+}
+
 export function PriceTable({ lines }: { lines: POLine[] }) {
   return (
     <div>
@@ -69,7 +82,9 @@ export function PriceTable({ lines }: { lines: POLine[] }) {
               <td className="px-4 py-3 text-right">
                 <PriceCell supplier={l.supplier} unitPrice={l.unit_price} />
               </td>
-              <td className="px-4 py-3 text-[11px] text-muted-foreground">{noteText(l)}</td>
+              <td className="px-4 py-3">
+                <NoteCell line={l} />
+              </td>
             </tr>
           ))}
         </tbody>

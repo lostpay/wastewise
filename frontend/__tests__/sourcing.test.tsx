@@ -54,4 +54,12 @@ describe("Sourcing screen", () => {
     await waitFor(() => expect(spy).toHaveBeenCalled());
     expect(spy.mock.calls[0][2]).toBe("abc123");
   });
+
+  it("labels a live LLM selection note with an 'AI picked this' framing", async () => {
+    vi.spyOn(api, "runSourcing").mockResolvedValue(DEMO_SOURCING);
+    renderWithWizard(<SourcingPage />, { initial: { datasetId: "demo", forecast: DEMO_FORECAST } });
+    const table = await screen.findByRole("table");
+    // DEMO_SOURCING's three lines are all live: true (fixed in Task 5)
+    expect(within(table).getAllByText(/AI picked this/i)).toHaveLength(3);
+  });
 });

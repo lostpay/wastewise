@@ -24,11 +24,12 @@ class _Retail:
 
 class _LLM:
     def complete(self, system, user):
-        # valid adjustment JSON for the adjustment step; plain note otherwise
-        if "JSON array" in system:
-            return ('[{"item":"cabbage","adjusted_qty":30,"reason":"Rain lowers demand"},'
-                    '{"item":"pork","adjusted_qty":20,"reason":"Rain lowers demand"},'
-                    '{"item":"chicken","adjusted_qty":28,"reason":"Rain lowers demand"}]')
+        # adjustment.py's per-item prompt asks for {"adjusted_qty":..,"reason":..};
+        # sourcing.py's selection prompt asks for {"index":..,"reason":..}. A plain
+        # sentence here exercises sourcing's fallback path, which is fine for this
+        # end-to-end smoke test (it only checks totals/line counts, not exact notes).
+        if "adjusted_qty" in system:
+            return '{"adjusted_qty": 25, "reason": "Rain lowers dine-in demand for this item."}'
         return "Kroger is 30% below market."
 
 

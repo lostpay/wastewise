@@ -113,3 +113,22 @@ def test_sourcing_dataset_id_404_when_unknown(tmp_path):
                     "location": "40.7,-74.0", "dataset_id": "does-not-exist"})
     assert r.status_code == 404
     api.app.dependency_overrides.clear()
+
+
+def test_rationale_endpoint_returns_paragraph_and_live_flag(tmp_path):
+    client = _client(tmp_path)
+    body = {
+        "items": [{"item": "cabbage", "forecast": 168, "adjusted_qty": 150,
+                   "reason": "Rain lowers dine-in demand.", "live": True}],
+        "lines": [{"item": "cabbage", "qty": 150, "supplier": "Kroger",
+                   "unit_price": 1.4, "line_total": 210.0,
+                   "note": "30% under the US retail average.", "live": True}],
+        "savings": 30.0,
+        "total": 210.0,
+    }
+    r = client.post("/rationale", json=body)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["paragraph"] == "note"  # _LLM.complete always returns "note"
+    assert data["live"] is True
+    api.app.dependency_overrides.clear()

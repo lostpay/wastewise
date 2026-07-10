@@ -25,11 +25,14 @@ describe("Forecast screen", () => {
     expect(push).toHaveBeenCalledWith("/setup");
   });
 
-  it("renders adjusted items and reasons after forecasting", async () => {
+  it("renders adjusted items with genuinely different per-item reasons after forecasting", async () => {
     vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
     renderWithWizard(<ForecastPage />, { initial: { datasetId: "demo" } });
     expect(await screen.findByText("cabbage")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getAllByText(/Rain forecast lowers dine-in demand/i).length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText(/fresh-cut sides like cabbage slaw/i).length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/pork's use in stews softens the drop/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/quick-grill items like chicken/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/18%/)).toBeInTheDocument(); // baseline_delta 0.18 -> "18%"
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /model/i })).toBeInTheDocument();

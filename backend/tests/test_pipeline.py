@@ -1,5 +1,5 @@
-from wastewise.models import WeatherInfo, SupplierPrice
-from wastewise.pipeline import run_forecast, run_sourcing
+from wastewise.models import WeatherInfo, SupplierPrice, AdjustedItem, POLine
+from wastewise.pipeline import run_forecast, run_sourcing, run_rationale
 
 
 class _Weather:
@@ -34,3 +34,13 @@ def test_run_sourcing_wraps_source_order():
     resp = run_sourcing([{"item": "cabbage", "qty": 3}], "loc",
                         _Wholesale(), _Retail(), _LLM())
     assert resp.total == 3.0
+
+
+def test_run_rationale_wraps_write_rationale():
+    items = [AdjustedItem(item="cabbage", forecast=100, adjusted_qty=90,
+                          reason="Rain lowers demand.", live=True)]
+    lines = [POLine(item="cabbage", qty=90, supplier="Kroger", unit_price=1.4,
+                    line_total=126.0, note="30% under benchmark.", live=True)]
+    resp = run_rationale(items, lines, 10.0, 126.0, _LLM())
+    assert resp.live is True
+    assert resp.paragraph == "note"  # _LLM.complete always returns "note"
