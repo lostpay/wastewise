@@ -55,3 +55,21 @@ export function isDemoMode(): boolean {
   const noBackend = !process.env.NEXT_PUBLIC_API_URL;
   return forced || noBackend;
 }
+
+const SERVED_KEY = "ww_demo_served";
+
+export function markDemoServed(): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(SERVED_KEY, "1");
+  window.dispatchEvent(new Event("ww:demo-served"));
+}
+
+export function clearDemoServed(): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(SERVED_KEY);
+  window.dispatchEvent(new Event("ww:demo-cleared"));
+}
+
+export function demoWasServed(): boolean {
+  return typeof window !== "undefined" && window.sessionStorage.getItem(SERVED_KEY) === "1";
+}
