@@ -13,7 +13,7 @@ import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function SourcingPage() {
   const router = useRouter();
-  const { forecast, location, sourcing, hydrated, set } = useWizard();
+  const { forecast, location, sourcing, hydrated, set, datasetId } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -29,11 +29,11 @@ export default function SourcingPage() {
     setLoading(true);
     setError(null);
     const items = forecast.items.map((it) => ({ item: it.item, qty: it.adjusted_qty }));
-    runSourcing(items, location)
+    runSourcing(items, location, datasetId)
       .then((res) => set({ sourcing: res }))
       .catch((e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Please try again."))
       .finally(() => setLoading(false));
-  }, [hydrated, forecast, location, sourcing, router, set]);
+  }, [hydrated, forecast, location, sourcing, router, set, datasetId]);
 
   if (hydrated && !forecast)
     return <RedirectNotice target="Forecast" reason="Run a forecast before sourcing suppliers." />;

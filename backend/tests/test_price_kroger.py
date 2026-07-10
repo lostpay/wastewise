@@ -9,6 +9,13 @@ LOCATIONS = "https://api.kroger.com/v1/locations"
 
 _PRODUCTS_BODY = {"data": [{"items": [{"price": {"regular": 1.50, "promo": 0}}]}]}
 
+_MULTI_PRODUCTS_BODY = {"data": [
+    {"description": "Private Selection Lemon Herb Chicken Thighs",
+     "items": [{"price": {"regular": 10.0, "promo": 0}}]},
+    {"description": "Kroger Chicken Breast",
+     "items": [{"price": {"regular": 4.5, "promo": 0}}]},
+]}
+
 
 def _mock_token():
     respx.post(TOKEN).mock(
@@ -90,3 +97,17 @@ def test_token_is_reused_across_items(tmp_path):
     src.get_retail_prices("cabbage", "40.7,-74.0")
     src.get_retail_prices("pork", "40.7,-74.0")
     assert token_route.call_count == 1
+
+
+@respx.mock
+def test_get_retail_prices_returns_multiple_candidates_with_descriptions(tmp_path):
+    _mock_token()
+    _mock_locations()
+    products = respx.get(url__startswith=PRODUCTS).mock(
+        return_value=httpx.Response(200, json=_MULTI_PRODUCTS_BODY))
+    src = KrogerRetail("id", "secret", FileCache(str(tmp_path)))
+    prices = src.get_retail_prices("chicken", "40.7,-74.0")
+    assert len(prices) == 2
+    assert prices[1].unit_price == 4.5
+    assert prices[1].description == "Kroger Chicken Breast"
+    assert products.calls.last.request.url.params["filter.limit"] == "5"
