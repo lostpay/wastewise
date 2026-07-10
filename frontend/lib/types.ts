@@ -36,6 +36,8 @@ export interface ForecastAdjustedItem {
 export interface ForecastResponse {
   items: ForecastAdjustedItem[];
   baseline_delta: number;
+  waste_avoided_units?: number;
+  waste_avoided_value?: number | null;
 }
 
 export interface POLine {

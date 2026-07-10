@@ -68,11 +68,24 @@ export default function ForecastPage() {
         <Skeleton className="h-80 w-full" />
       ) : (
         <>
-          <StatTile
-            label="Forecast accuracy gain vs. simple seasonal baseline"
-            value={`${Math.round(forecast.baseline_delta * 100)}%`}
-            hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Higher is better."
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <StatTile
+              label="Forecast accuracy gain vs. simple seasonal baseline"
+              value={`${Math.round(forecast.baseline_delta * 100)}%`}
+              hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Higher is better."
+            />
+            {(forecast.waste_avoided_units ?? 0) > 0 ? (
+              <StatTile
+                label="Over-ordering avoided vs. baseline"
+                value={
+                  forecast.waste_avoided_value != null
+                    ? `$${forecast.waste_avoided_value.toFixed(2)}`
+                    : `${(forecast.waste_avoided_units ?? 0).toFixed(0)} units`
+                }
+                hint="Same 7-day holdout: what a naive same-weekday ordering policy would have over-bought, minus this model's over-buy — both with the 15% safety buffer."
+              />
+            ) : null}
+          </div>
           <div className="border border-foreground/20 bg-card">
             <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
               <p className="ww-label">Fig. 1 — Per-item quantities</p>
