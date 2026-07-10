@@ -51,4 +51,11 @@ describe("Forecast screen", () => {
     await waitFor(() => expect(screen.queryByText("cabbage")).toBeInTheDocument());
     expect(push).not.toHaveBeenCalledWith("/setup");
   });
+
+  it("shows the waste-avoided tile when the backtest reports savings", async () => {
+    vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
+    renderWithWizard(<ForecastPage />, { initial: { datasetId: "demo" } });
+    expect(await screen.findByText(/\$61\.50/)).toBeInTheDocument();
+    expect(screen.getByText(/over-ordering avoided/i)).toBeInTheDocument();
+  });
 });

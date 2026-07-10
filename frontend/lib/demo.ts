@@ -13,6 +13,8 @@ export const DEMO_UPLOAD: UploadResponse = {
 
 export const DEMO_FORECAST: ForecastResponse = {
   baseline_delta: 0.18,
+  waste_avoided_units: 34,
+  waste_avoided_value: 61.5,
   items: [
     { item: "cabbage", forecast: 168.0, adjusted_qty: 150.0, live: true,
       reason: "Rain forecast lowers dine-in demand for fresh-cut sides like cabbage slaw." },
