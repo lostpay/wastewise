@@ -37,7 +37,7 @@ class FredWholesale:
                 "series_id": series_id,
                 "api_key": self.api_key,
                 "sort_order": "desc",
-                "limit": 1,
+                "limit": 6,  # enough months that a "." (unfinalized) latest value can fall through to an earlier one
                 "file_type": "json",
             })
             resp.raise_for_status()

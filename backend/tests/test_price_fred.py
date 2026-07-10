@@ -33,3 +33,13 @@ def test_get_wholesale_price_error_returns_none(tmp_path):
     respx.get(url__startswith=BASE).mock(return_value=httpx.Response(503))
     src = FredWholesale("key", FileCache(str(tmp_path)))
     assert src.get_wholesale_price("eggs") is None
+
+
+@respx.mock
+def test_get_wholesale_price_requests_enough_history_to_skip_missing(tmp_path):
+    route = respx.get(url__startswith=BASE).mock(
+        return_value=httpx.Response(200, json={"observations": [{"date": "2026-05-01", "value": "2.19"}]}))
+    src = FredWholesale("key", FileCache(str(tmp_path)))
+    src.get_wholesale_price("eggs")
+    sent_limit = int(route.calls.last.request.url.params["limit"])
+    assert sent_limit >= 6
