@@ -54,6 +54,7 @@ class POLine(BaseModel):
     line_total: float
     note: str
     live: bool
+    unit: str = ""
 
 
 class SourcingResponse(BaseModel):
@@ -77,6 +78,7 @@ class SupplierPrice(BaseModel):
     supplier: str
     unit_price: float
     description: str = ""
+    unit: str = ""
 
 
 class RationaleResponse(BaseModel):

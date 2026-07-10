@@ -29,6 +29,7 @@ export function POTable({ lines, total }: { lines: POLine[]; total: number }) {
             </td>
             <td className="ww-num px-4 py-3 text-right text-sm">
               ${l.unit_price.toFixed(2)}
+              {l.unit ? <span className="text-muted-foreground"> / {l.unit}</span> : null}
             </td>
             <td className="ww-num px-4 py-3 text-right text-sm">
               ${l.line_total.toFixed(2)}

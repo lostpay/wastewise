@@ -36,6 +36,7 @@ export interface POLine {
   line_total: number;
   note: string;
   live: boolean;
+  unit?: string;
 }
 
 export interface SourcingResponse {
