@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { runForecast, ApiError } from "@/lib/api";
 import { ForecastChart } from "@/components/forecast-chart";
+import { HistoryChart } from "@/components/history-chart";
 import { StatTile } from "@/components/stat-tile";
 import { ReasonBadge } from "@/components/reason-badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function ForecastPage() {
   const router = useRouter();
-  const { datasetId, horizon, location, forecast, hydrated, set } = useWizard();
+  const { datasetId, horizon, location, forecast, history, hydrated, set } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -102,6 +103,11 @@ export default function ForecastPage() {
               <ForecastChart items={forecast.items} />
             </div>
           </div>
+          {history && history.length > 0 ? (
+            <div className="border border-foreground/20 bg-card">
+              <HistoryChart history={history} items={forecast.items} />
+            </div>
+          ) : null}
           <div>
             <p className="ww-label mb-2">Tbl. 1 — Per-item detail</p>
             <div className="border border-foreground/20">

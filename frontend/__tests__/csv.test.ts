@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { poToCsv } from "@/lib/csv";
+import { poToCsv, parseSalesHistory } from "@/lib/csv";
 
 describe("poToCsv", () => {
   it("emits a header, one row per line, and a total row", () => {
@@ -32,5 +32,30 @@ describe("poToCsv", () => {
     const row = csv.trim().split("\n")[1];
     // each formula-triggering field gets a leading apostrophe so spreadsheets treat it as text
     expect(row).toBe("'=cmd,1,,'+1,1,1,'@SUM(A1)");
+  });
+});
+
+describe("parseSalesHistory", () => {
+  it("parses date,item,quantity rows and skips malformed lines", () => {
+    const text = "date,item,quantity\n2026-06-01,cabbage,20\n2026-06-01,pork,15\nbad,row\n2026-06-02,cabbage,22";
+    const out = parseSalesHistory(text);
+    expect(out).toHaveLength(3);
+    expect(out[0]).toEqual({ date: "2026-06-01", item: "cabbage", quantity: 20 });
+  });
+
+  it("tolerates a price column and header case differences", () => {
+    const text = "Date,Item,Quantity,Price\n2026-06-01,cabbage,20,1.5";
+    expect(parseSalesHistory(text)).toEqual([{ date: "2026-06-01", item: "cabbage", quantity: 20 }]);
+  });
+
+  it("keeps only the most recent maxDays dates", () => {
+    const rows = Array.from({ length: 10 }, (_, i) => `2026-06-${String(i + 1).padStart(2, "0")},cabbage,${i}`);
+    const out = parseSalesHistory(["date,item,quantity", ...rows].join("\n"), 3);
+    expect(new Set(out.map((p) => p.date)).size).toBe(3);
+    expect(out[0].date).toBe("2026-06-08");
+  });
+
+  it("returns [] when required headers are missing", () => {
+    expect(parseSalesHistory("a,b,c\n1,2,3")).toEqual([]);
   });
 });
