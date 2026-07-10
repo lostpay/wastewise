@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { uploadCsv, runForecast, ApiError } from "@/lib/api";
-import { DEMO_FORECAST } from "@/lib/demo";
+import { uploadCsv, runForecast, runSourcing, ApiError } from "@/lib/api";
+import { DEMO_FORECAST, DEMO_SOURCING } from "@/lib/demo";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -51,5 +51,22 @@ describe("api client", () => {
     const res = await runForecast("ds1", "week", "40.7,-74.0");
     expect(res).toEqual(DEMO_FORECAST);
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("sends currency + dataset_id in the sourcing request body", async () => {
+    const spy = vi.fn().mockResolvedValue(jsonResponse(DEMO_SOURCING));
+    vi.stubGlobal("fetch", spy);
+    await runSourcing([{ item: "onion", qty: 5 }], "40.7,-74.0", "ds123", "INR");
+    const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.currency).toBe("INR");
+    expect(body.dataset_id).toBe("ds123");
+  });
+
+  it("defaults currency to USD when the caller omits it", async () => {
+    const spy = vi.fn().mockResolvedValue(jsonResponse(DEMO_SOURCING));
+    vi.stubGlobal("fetch", spy);
+    await runSourcing([{ item: "onion", qty: 5 }], "40.7,-74.0", "ds123");
+    const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.currency).toBe("USD");
   });
 });

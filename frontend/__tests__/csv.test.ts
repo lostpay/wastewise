@@ -4,7 +4,7 @@ import { poToCsv } from "@/lib/csv";
 describe("poToCsv", () => {
   it("emits a header, one row per line, and a total row", () => {
     const csv = poToCsv(
-      [{ item: "cabbage", qty: 10, supplier: "Kroger", unit_price: 1.5, line_total: 15, note: "cheap, fresh", live: true }],
+      [{ item: "cabbage", qty: 10, supplier: "Kroger", unit_price: 1.5, line_total: 15, note: "cheap, fresh", live: true, benchmark: null }],
       15,
     );
     const lines = csv.trim().split("\n");
@@ -15,7 +15,7 @@ describe("poToCsv", () => {
 
   it("quotes item and supplier fields that contain commas or quotes", () => {
     const csv = poToCsv(
-      [{ item: "beans, dried", qty: 5, supplier: 'A "Farm" Co', unit_price: 2, line_total: 10, note: "ok", live: true }],
+      [{ item: "beans, dried", qty: 5, supplier: 'A "Farm" Co', unit_price: 2, line_total: 10, note: "ok", live: true, benchmark: null }],
       10,
     );
     const row = csv.trim().split("\n")[1];
@@ -25,7 +25,7 @@ describe("poToCsv", () => {
 
   it("neutralizes CSV formula injection by prefixing a leading =, +, -, or @", () => {
     const csv = poToCsv(
-      [{ item: "=cmd", qty: 1, supplier: "+1", unit_price: 1, line_total: 1, note: "@SUM(A1)", live: true }],
+      [{ item: "=cmd", qty: 1, supplier: "+1", unit_price: 1, line_total: 1, note: "@SUM(A1)", live: true, benchmark: null }],
       1,
     );
     const row = csv.trim().split("\n")[1];

@@ -1,4 +1,4 @@
-import type { UploadResponse, ForecastResponse, SourcingResponse, RationaleResponse, ForecastAdjustedItem, POLine, Horizon } from "./types";
+import type { UploadResponse, ForecastResponse, SourcingResponse, RationaleResponse, ForecastAdjustedItem, POLine, Horizon, Currency } from "./types";
 import { DEMO_UPLOAD, DEMO_FORECAST, DEMO_SOURCING, DEMO_RATIONALE, isDemoMode } from "./demo";
 
 export class ApiError extends Error {
@@ -65,8 +65,13 @@ export function runSourcing(
   items: { item: string; qty: number }[],
   location: string,
   datasetId?: string | null,
+  currency: Currency = "USD",
 ): Promise<SourcingResponse> {
-  return call("/sourcing", jsonInit({ items, location, dataset_id: datasetId ?? undefined }), DEMO_SOURCING);
+  return call(
+    "/sourcing",
+    jsonInit({ items, location, dataset_id: datasetId ?? undefined, currency }),
+    DEMO_SOURCING,
+  );
 }
 
 export function runRationale(

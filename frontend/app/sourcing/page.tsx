@@ -13,7 +13,7 @@ import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function SourcingPage() {
   const router = useRouter();
-  const { forecast, location, sourcing, hydrated, set, datasetId } = useWizard();
+  const { forecast, location, sourcing, hydrated, set, datasetId, currency } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -29,11 +29,11 @@ export default function SourcingPage() {
     setLoading(true);
     setError(null);
     const items = forecast.items.map((it) => ({ item: it.item, qty: it.adjusted_qty }));
-    runSourcing(items, location, datasetId)
+    runSourcing(items, location, datasetId, currency)
       .then((res) => set({ sourcing: res }))
       .catch((e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Please try again."))
       .finally(() => setLoading(false));
-  }, [hydrated, forecast, location, sourcing, router, set, datasetId]);
+  }, [hydrated, forecast, location, sourcing, router, set, datasetId, currency]);
 
   if (hydrated && !forecast)
     return <RedirectNotice target="Forecast" reason="Run a forecast before sourcing suppliers." />;
@@ -70,7 +70,7 @@ export default function SourcingPage() {
           <StatTile
             label="Estimated savings vs. US retail average"
             value={`$${sourcing.savings.toFixed(2)}`}
-            hint="Sum of (BLS benchmark − Kroger price) × qty for items where Kroger beats the benchmark."
+            hint="Sum of (BLS benchmark − Kroger price) × qty for items where Kroger beats the benchmark. Items without a real US benchmark (e.g. Paneer, Mutton) are shown but not counted here."
           />
           <div>
             <p className="ww-label mb-2">Tbl. 2 — Supplier price detail</p>

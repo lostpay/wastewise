@@ -1,4 +1,16 @@
 export type Horizon = "day" | "week";
+export type Currency = "USD" | "INR" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD" | "CNY";
+
+export const CURRENCY_OPTIONS: { code: Currency; label: string }[] = [
+  { code: "USD", label: "US dollar (USD)" },
+  { code: "INR", label: "Indian rupee (INR)" },
+  { code: "EUR", label: "Euro (EUR)" },
+  { code: "GBP", label: "British pound (GBP)" },
+  { code: "JPY", label: "Japanese yen (JPY)" },
+  { code: "CAD", label: "Canadian dollar (CAD)" },
+  { code: "AUD", label: "Australian dollar (AUD)" },
+  { code: "CNY", label: "Chinese yuan (CNY)" },
+];
 
 export interface DatasetSummary {
   dataset_id: string;
@@ -34,6 +46,9 @@ export interface POLine {
   line_total: number;
   note: string;
   live: boolean;
+  // US retail average (BLS via FRED) in USD, or null when the item has no
+  // real US benchmark (historical fallback or nothing).
+  benchmark: number | null;
 }
 
 export interface SourcingResponse {

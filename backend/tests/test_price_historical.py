@@ -68,3 +68,14 @@ def test_fallback_retail_never_overrides_real_primary_offers():
     combo = FallbackRetail(_RealDataSource(), historical)
     offers = combo.get_retail_prices("mutton", "loc")
     assert offers[0].supplier == "Kroger"
+
+
+def test_currency_conversion_applied_on_ingest():
+    # ₹610 mean at 0.012 USD/INR ≈ 7.32
+    src = HistoricalPriceSource(_records(), currency="INR")
+    assert src.get_wholesale_price("mutton") == 7.32
+
+
+def test_unknown_currency_passes_through_as_usd():
+    src = HistoricalPriceSource(_records(), currency="XYZ")
+    assert src.get_wholesale_price("mutton") == 610.0

@@ -29,6 +29,30 @@ def test_source_order_picks_cheapest_and_computes_savings():
     assert line.live is False  # _FakeLLM's reply isn't valid selection JSON
 
 
+def test_source_order_excludes_historical_items_from_savings():
+    # Same setup as the picks-cheapest test, but marks the item as backed by
+    # the historical fallback. Savings should stay $0 because comparing a
+    # historical-average benchmark to a real Kroger price is not a real
+    # market saving (and used to inflate savings for non-USD CSVs).
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _Wholesale(), _Retail(), _FakeLLM(), "loc",
+                        historical_items={"cabbage"})
+    assert resp.lines[0].line_total == 15.0
+    assert resp.total == 15.0
+    assert resp.savings == 0.0
+    # Historical items get benchmark=None so the frontend can render "—" and
+    # avoid claiming a US retail comparison it doesn't actually have.
+    assert resp.lines[0].benchmark is None
+
+
+def test_source_order_exposes_the_us_benchmark_on_each_line():
+    # Non-historical items expose their real FRED benchmark on the POLine so
+    # the frontend can show it alongside the Kroger price.
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _Wholesale(), _Retail(), _FakeLLM(), "loc")
+    assert resp.lines[0].benchmark == 2.0
+
+
 class _NoRetail:
     def get_retail_prices(self, item, location): return []
 
@@ -47,9 +71,12 @@ class _RaisingLLM:
 
 
 def test_source_order_fallback_note_uses_retail_average_language():
+    # _Wholesale benchmark is 2.0, no retail offer, so unit_price falls back
+    # to the benchmark itself (Market fallback) -- the note reflects that
+    # 2.0 == 2.0 as "at or above".
     resp = source_order([{"item": "cabbage", "qty": 4}],
                         _Wholesale(), _NoRetail(), _RaisingLLM(), "loc")
-    assert resp.lines[0].note == "At or above the US retail average."
+    assert resp.lines[0].note == "$2.00 vs. US avg $2.00 (at or above)."
     assert resp.lines[0].live is False
 
 
@@ -120,7 +147,7 @@ def test_source_order_falls_back_to_cheapest_when_llm_output_unusable():
     assert line.unit_price == 4.5  # still the cheapest candidate
     # _Wholesale's benchmark (2.0) is below the cheapest candidate (4.5), so the
     # deterministic fallback note is honestly "at or above", not "under".
-    assert line.note == "At or above the US retail average."
+    assert line.note == "$4.50 vs. US avg $2.00 (at or above)."
     assert line.live is False
 
 

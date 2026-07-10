@@ -23,19 +23,47 @@ function SupplierCell({ supplier }: { supplier: string }) {
   );
 }
 
-function PriceCell({ supplier, unitPrice }: { supplier: string; unitPrice: number }) {
-  const isFallback = supplier === "Market";
-  if (unitPrice === 0) {
+function PriceCell({ line }: { line: POLine }) {
+  const isFallback = line.supplier === "Market";
+  if (line.unit_price === 0) {
     return <span className="ww-num text-muted-foreground">&mdash;</span>;
   }
+  // Show the delta vs. US benchmark right under the unit price -- that's where
+  // the reader's eye is when asking "is this a good deal?"
+  const hasBenchmark = line.benchmark != null && line.benchmark > 0;
+  const pct = hasBenchmark
+    ? ((line.unit_price - line.benchmark!) / line.benchmark!) * 100
+    : 0;
+  const roundedPct = Math.round(Math.abs(pct));
+  const isUnder = pct < 0;
+  // Suppress a "+0% vs. avg" line: when the unit price *is* the benchmark
+  // (e.g. a Market fallback row), the delta is noise. Fall through to the
+  // "benchmark" hint instead.
+  const showDelta = hasBenchmark && roundedPct > 0;
   return (
     <div className="flex flex-col items-end gap-0.5">
-      <span className="ww-num text-sm">${unitPrice.toFixed(2)}</span>
-      {isFallback ? (
+      <span className="ww-num text-sm">${line.unit_price.toFixed(2)}</span>
+      {showDelta ? (
+        <span
+          className={`ww-num text-[10px] ${
+            isUnder ? "text-emerald-700" : "text-muted-foreground"
+          }`}
+        >
+          {isUnder ? "−" : "+"}
+          {roundedPct}% vs. avg
+        </span>
+      ) : isFallback ? (
         <span className="text-[10px] italic text-muted-foreground">benchmark</span>
       ) : null}
     </div>
   );
+}
+
+function BenchmarkCell({ line }: { line: POLine }) {
+  if (line.benchmark == null) {
+    return <span className="ww-num text-muted-foreground">&mdash;</span>;
+  }
+  return <span className="ww-num text-sm">${line.benchmark.toFixed(2)}</span>;
 }
 
 function noteText(line: POLine): string {
@@ -66,6 +94,7 @@ export function PriceTable({ lines }: { lines: POLine[] }) {
             <th className="ww-label px-4 py-2 text-left">Item</th>
             <th className="ww-label px-4 py-2 text-left">Supplier</th>
             <th className="ww-label px-4 py-2 text-right">Unit price</th>
+            <th className="ww-label px-4 py-2 text-right">US avg</th>
             <th className="ww-label px-4 py-2 text-left">Note</th>
           </tr>
         </thead>
@@ -80,7 +109,10 @@ export function PriceTable({ lines }: { lines: POLine[] }) {
                 <SupplierCell supplier={l.supplier} />
               </td>
               <td className="px-4 py-3 text-right">
-                <PriceCell supplier={l.supplier} unitPrice={l.unit_price} />
+                <PriceCell line={l} />
+              </td>
+              <td className="px-4 py-3 text-right">
+                <BenchmarkCell line={l} />
               </td>
               <td className="px-4 py-3">
                 <NoteCell line={l} />
@@ -97,7 +129,10 @@ export function PriceTable({ lines }: { lines: POLine[] }) {
           <span className="ww-label ml-2 text-foreground">No live offer</span>{" "}
           means Kroger doesn&apos;t stock the item; we show the US retail
           average from the Bureau of Labor Statistics (via FRED) as a reference
-          benchmark.
+          benchmark.{" "}
+          <span className="ww-label ml-2 text-foreground">US avg</span> is the
+          BLS national average for the item, or &mdash; when no US benchmark
+          exists (e.g. Paneer, Mutton).
         </p>
       </div>
     </div>

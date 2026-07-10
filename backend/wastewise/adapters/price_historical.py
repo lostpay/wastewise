@@ -11,20 +11,25 @@ from collections import defaultdict
 import statistics
 
 from wastewise.adapters.base import RetailSource, WholesaleSource
+from wastewise.currency import to_usd
 from wastewise.models import SalesRecord, SupplierPrice
 
 HISTORICAL_SUPPLIER = "Historical average"
 
 
 class HistoricalPriceSource:
-    def __init__(self, records: list[SalesRecord]):
+    def __init__(self, records: list[SalesRecord], currency: str = "USD"):
         by_item: dict[str, list[float]] = defaultdict(list)
         display_name: dict[str, str] = {}
         for r in records:
             key = r.item.lower()
             display_name.setdefault(key, r.item)
             if r.price is not None:
-                by_item[key].append(r.price)
+                # Convert once at ingest so downstream comparisons against
+                # FRED (USD) and Kroger (USD) are unit-compatible.
+                usd = to_usd(r.price, currency)
+                if usd is not None:
+                    by_item[key].append(usd)
         self._avg_price = {item: round(statistics.fmean(prices), 2)
                            for item, prices in by_item.items()}
         self._display_name = display_name
