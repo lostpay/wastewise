@@ -1,6 +1,12 @@
 # tests/test_adjustment.py
+import datetime
+
 from wastewise.models import ForecastItem, WeatherInfo
 from wastewise.agents.adjustment import adjust_forecast, FALLBACK_REASON
+
+
+def _one_day(w):
+    return [(datetime.date(2026, 7, 13), w)]
 
 
 def _items():
@@ -29,7 +35,7 @@ class _PerItemLLM:
 
 def test_adjusts_each_item_with_genuinely_different_reasoning():
     weather = WeatherInfo(condition="Rain", temp_c=15, precipitation_mm=8)
-    out = adjust_forecast(_items(), weather, [], _PerItemLLM())
+    out = adjust_forecast(_items(), _one_day(weather), [], _PerItemLLM())
     by_item = {o.item: o for o in out}
     assert by_item["stew"].adjusted_qty == 130
     assert by_item["salad greens"].adjusted_qty == 60
@@ -43,8 +49,8 @@ class _BadJsonLLM:
 
 
 def test_fallback_on_bad_json_marks_not_live():
-    out = adjust_forecast(_items(), WeatherInfo(condition="Clear", temp_c=25,
-                          precipitation_mm=0), [], _BadJsonLLM())
+    out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Clear", temp_c=25,
+                          precipitation_mm=0)), [], _BadJsonLLM())
     assert out[0].adjusted_qty == 115  # unchanged recommended qty
     assert out[0].reason == FALLBACK_REASON
     assert out[0].live is False
@@ -60,8 +66,8 @@ class _MixedLLM:
 
 
 def test_one_items_failure_does_not_affect_another_items_success():
-    out = adjust_forecast(_items(), WeatherInfo(condition="Rain", temp_c=15,
-                          precipitation_mm=8), [], _MixedLLM())
+    out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Rain", temp_c=15,
+                          precipitation_mm=8)), [], _MixedLLM())
     by_item = {o.item: o for o in out}
     assert by_item["stew"].live is True
     assert by_item["stew"].adjusted_qty == 130
@@ -76,8 +82,29 @@ class _RaisingLLM:
 
 def test_fallback_on_llm_transport_error():
     items = _items()
-    out = adjust_forecast(items, WeatherInfo(condition="Clear", temp_c=25,
-                          precipitation_mm=0), [], _RaisingLLM())
+    out = adjust_forecast(items, _one_day(WeatherInfo(condition="Clear", temp_c=25,
+                          precipitation_mm=0)), [], _RaisingLLM())
     assert all(o.adjusted_qty == i.recommended_purchase_qty for o, i in zip(out, items))
     assert all(o.reason == FALLBACK_REASON for o in out)
     assert all(o.live is False for o in out)
+
+
+class _CaptureLLM:
+    def __init__(self):
+        self.prompts = []
+
+    def complete(self, system, user):
+        self.prompts.append(user)
+        return '{"adjusted_qty": 100, "reason": "ok"}'
+
+
+def test_prompt_includes_every_horizon_day():
+    weather = [
+        (datetime.date(2026, 7, 13), WeatherInfo(condition="Rain", temp_c=15, precipitation_mm=8)),
+        (datetime.date(2026, 7, 14), WeatherInfo(condition="Clear", temp_c=25, precipitation_mm=0)),
+    ]
+    llm = _CaptureLLM()
+    adjust_forecast(_items(), weather, [], llm)
+    assert "Mon Jul 13" in llm.prompts[0]
+    assert "Tue Jul 14" in llm.prompts[0]
+    assert "Rain" in llm.prompts[0] and "Clear" in llm.prompts[0]

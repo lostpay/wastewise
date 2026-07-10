@@ -5,7 +5,11 @@ from wastewise.pipeline import run_forecast, run_sourcing, run_rationale
 
 
 class _Weather:
+    def __init__(self):
+        self.calls = 0
+
     def get_weather(self, date, location):
+        self.calls += 1
         return WeatherInfo(condition="Clear", temp_c=25, precipitation_mm=0)
 
 
@@ -24,9 +28,11 @@ class _LLM:
 
 def test_run_forecast_returns_adjusted_items(sample_sales):
     holidays = _Holidays()
-    resp = run_forecast(sample_sales, "week", "40.7,-74.0", _Weather(), holidays, _LLM())
+    weather = _Weather()
+    resp = run_forecast(sample_sales, "week", "40.7,-74.0", weather, holidays, _LLM())
     assert {i.item for i in resp.items} == {"cabbage", "pork"}
     assert 0.0 <= resp.baseline_delta <= 1.0
+    assert weather.calls == 7
     # holiday window must cover the sales history, not just the future horizon
     start, end = holidays.calls[0]
     assert start == min(r.date for r in sample_sales)
