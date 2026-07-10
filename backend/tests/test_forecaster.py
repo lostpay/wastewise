@@ -48,3 +48,10 @@ def test_waste_avoided_value_present_when_prices_exist(sample_sales):
     _, stats = forecast_items(priced, horizon_days=7)
     assert stats.waste_avoided_value is not None
     assert stats.waste_avoided_value >= 0.0
+
+
+def test_forecast_items_include_daily_series(sample_sales):
+    items, _ = forecast_items(sample_sales, horizon_days=7)
+    for it in items:
+        assert len(it.daily) == 7
+        assert all(d >= 0 for d in it.daily)

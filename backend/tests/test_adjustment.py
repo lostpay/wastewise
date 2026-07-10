@@ -12,9 +12,10 @@ def _one_day(w):
 def _items():
     return [
         ForecastItem(item="stew", forecast=100, baseline=95, safety_buffer=15,
-                    recommended_purchase_qty=115),
+                    recommended_purchase_qty=115, daily=[14, 15, 14, 15, 14, 14, 14]),
         ForecastItem(item="salad greens", forecast=80, baseline=75,
-                    safety_buffer=10, recommended_purchase_qty=90),
+                    safety_buffer=10, recommended_purchase_qty=90,
+                    daily=[11, 12, 11, 12, 11, 11, 12]),
     ]
 
 
@@ -108,3 +109,9 @@ def test_prompt_includes_every_horizon_day():
     assert "Mon Jul 13" in llm.prompts[0]
     assert "Tue Jul 14" in llm.prompts[0]
     assert "Rain" in llm.prompts[0] and "Clear" in llm.prompts[0]
+
+
+def test_adjustment_preserves_daily_series():
+    out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Clear", temp_c=25,
+                          precipitation_mm=0)), [], _BadJsonLLM())
+    assert out[0].daily == [14, 15, 14, 15, 14, 14, 14]

@@ -46,11 +46,12 @@ def _adjust_one(item: ForecastItem, weather_txt: str, holiday_txt: str, llm) -> 
         if not reason:
             raise ValueError("empty reason")
         return AdjustedItem(item=item.item, forecast=item.forecast,
-                            adjusted_qty=adjusted_qty, reason=reason, live=True)
+                            adjusted_qty=adjusted_qty, reason=reason, live=True,
+                            daily=item.daily)
     except Exception:
         return AdjustedItem(item=item.item, forecast=item.forecast,
                             adjusted_qty=item.recommended_purchase_qty,
-                            reason=FALLBACK_REASON, live=False)
+                            reason=FALLBACK_REASON, live=False, daily=item.daily)
 
 
 def adjust_forecast(items: list[ForecastItem],
