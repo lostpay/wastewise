@@ -33,10 +33,12 @@ def _fallback_note(unit_price: float, benchmark: float | None) -> str:
 
 
 def _choose_offer(llm, item: str, offers: list[SupplierPrice],
-                  benchmark: float | None) -> tuple[SupplierPrice, str]:
+                  benchmark: float | None) -> tuple[SupplierPrice, str, bool]:
     """Ask the LLM to pick the best candidate + explain; fall back to the
     cheapest offer with a formulaic note if the LLM is unavailable or
-    returns something unusable. `offers` must be non-empty."""
+    returns something unusable. `offers` must be non-empty. The third
+    element of the return tuple is `live` -- True only on the LLM-selection
+    success path."""
     fallback_best = min(offers, key=lambda o: o.unit_price)
     candidates = "\n".join(
         f"[{i}] {o.description or o.supplier} @ {o.unit_price}"
@@ -51,9 +53,9 @@ def _choose_offer(llm, item: str, offers: list[SupplierPrice],
         reason = str(parsed["reason"]).strip()
         if not (0 <= idx < len(offers)) or not reason:
             raise ValueError("bad selection")
-        return offers[idx], reason
+        return offers[idx], reason, True
     except Exception:
-        return fallback_best, _fallback_note(fallback_best.unit_price, benchmark)
+        return fallback_best, _fallback_note(fallback_best.unit_price, benchmark), False
 
 
 def source_order(items: list[dict], wholesale, retail, llm,
@@ -70,8 +72,8 @@ def source_order(items: list[dict], wholesale, retail, llm,
         if offers:
             return _choose_offer(llm, item, offers, benchmark)
         if benchmark is not None:
-            return None, _fallback_note(benchmark, benchmark)
-        return None, NO_MATCH_NOTE
+            return None, _fallback_note(benchmark, benchmark), False
+        return None, NO_MATCH_NOTE, False
 
     # Choosing an offer and writing its note is an independent LLM call per
     # item -- run them concurrently instead of one at a time, since each
@@ -82,7 +84,7 @@ def source_order(items: list[dict], wholesale, retail, llm,
     total = 0.0
     savings = 0.0
     lines = []
-    for (item, qty, benchmark, offers), (offer, note) in zip(prepared, resolved):
+    for (item, qty, benchmark, offers), (offer, note, live) in zip(prepared, resolved):
         if offer is not None:
             supplier, unit_price = offer.supplier, offer.unit_price
         elif benchmark is not None:
@@ -94,6 +96,7 @@ def source_order(items: list[dict], wholesale, retail, llm,
         if benchmark is not None and unit_price < benchmark:
             savings += (benchmark - unit_price) * qty
         lines.append(POLine(item=item, qty=qty, supplier=supplier,
-                            unit_price=unit_price, line_total=line_total, note=note, live=False))
+                            unit_price=unit_price, line_total=line_total,
+                            note=note, live=live))
     return SourcingResponse(lines=lines, total=round(total, 2),
                             savings=round(savings, 2))

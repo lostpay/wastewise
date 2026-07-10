@@ -26,6 +26,7 @@ def test_source_order_picks_cheapest_and_computes_savings():
     assert line.line_total == 15.0
     assert resp.total == 15.0
     assert resp.savings == 5.0  # (2.0-1.5)*10
+    assert line.live is False  # _FakeLLM's reply isn't valid selection JSON
 
 
 class _NoRetail:
@@ -37,6 +38,7 @@ def test_source_order_falls_back_to_market_when_no_retail():
                         _Wholesale(), _NoRetail(), _FakeLLM(), "loc")
     assert resp.lines[0].supplier == "Market"
     assert resp.lines[0].unit_price == 2.0
+    assert resp.lines[0].live is False
 
 
 class _RaisingLLM:
@@ -48,6 +50,7 @@ def test_source_order_fallback_note_uses_retail_average_language():
     resp = source_order([{"item": "cabbage", "qty": 4}],
                         _Wholesale(), _NoRetail(), _RaisingLLM(), "loc")
     assert resp.lines[0].note == "At or above the US retail average."
+    assert resp.lines[0].live is False
 
 
 class _NoWholesale:
@@ -67,6 +70,7 @@ def test_source_order_no_retail_and_no_benchmark_is_honest_zero():
     assert line.supplier == "No price data"
     assert line.unit_price == 0.0
     assert line.note == NO_MATCH_NOTE
+    assert line.live is False
 
 
 def test_source_order_still_falls_back_to_market_when_benchmark_exists():
@@ -101,6 +105,7 @@ def test_source_order_uses_llm_to_pick_best_candidate_not_just_cheapest_index0()
     line = resp.lines[0]
     assert line.unit_price == 4.5
     assert line.note == "Plain cut, well under benchmark."
+    assert line.live is True
 
 
 class _MalformedLLM:
@@ -114,10 +119,9 @@ def test_source_order_falls_back_to_cheapest_when_llm_output_unusable():
     line = resp.lines[0]
     assert line.unit_price == 4.5  # still the cheapest candidate
     # _Wholesale's benchmark (2.0) is below the cheapest candidate (4.5), so the
-    # deterministic fallback note is honestly "at or above", not "under" -- the
-    # brief's literal assertion ("under the US retail average") was inconsistent
-    # with its own fixtures (see report for details).
+    # deterministic fallback note is honestly "at or above", not "under".
     assert line.note == "At or above the US retail average."
+    assert line.live is False
 
 
 class _OutOfRangeLLM:
@@ -129,3 +133,4 @@ def test_source_order_falls_back_when_llm_picks_out_of_range_index():
     resp = source_order([{"item": "chicken", "qty": 2}],
                         _Wholesale(), _MultiRetail(), _OutOfRangeLLM(), "loc")
     assert resp.lines[0].unit_price == 4.5
+    assert resp.lines[0].live is False
