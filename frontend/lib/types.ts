@@ -46,6 +46,9 @@ export interface POLine {
   line_total: number;
   note: string;
   live: boolean;
+  // US retail average (BLS via FRED) in USD, or null when the item has no
+  // real US benchmark (historical fallback or nothing).
+  benchmark: number | null;
 }
 
 export interface SourcingResponse {

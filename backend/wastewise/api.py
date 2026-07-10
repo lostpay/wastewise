@@ -130,6 +130,12 @@ def forecast(req: ForecastRequest, deps: dict = Depends(get_deps)):
 @app.post("/sourcing")
 def sourcing(req: SourcingRequest, deps: dict = Depends(get_deps)):
     wholesale, retail = deps["wholesale"], deps["retail"]
+    # Items whose benchmark, if any, will come from the historical fallback --
+    # i.e. items where the *primary* wholesale (FRED) has no answer. These are
+    # the rows we exclude from the "savings vs. US retail average" total,
+    # since comparing a locally-averaged benchmark to itself isn't a market
+    # saving. Items FRED does cover (e.g. Eggs) stay in savings even when the
+    # dataset also happens to include them.
     historical_items: set[str] = set()
     if req.dataset_id:
         try:
@@ -137,7 +143,11 @@ def sourcing(req: SourcingRequest, deps: dict = Depends(get_deps)):
         except KeyError:
             raise HTTPException(status_code=404, detail="dataset not found")
         historical = HistoricalPriceSource(records, currency=req.currency)
-        historical_items = historical.known_items
+        historical_items = {
+            i.item for i in req.items
+            if wholesale.get_wholesale_price(i.item) is None
+            and historical.get_wholesale_price(i.item) is not None
+        }
         wholesale = FallbackWholesale(wholesale, historical)
         retail = FallbackRetail(retail, historical)
     return run_sourcing([i.model_dump() for i in req.items], req.location,

@@ -46,6 +46,10 @@ class POLine(BaseModel):
     line_total: float
     note: str
     live: bool
+    # US retail average (BLS via FRED) for this item in USD, or None when the
+    # benchmark came from the historical fallback or no source at all.
+    # `savings` at the response level only counts rows where this is not None.
+    benchmark: float | None = None
 
 
 class SourcingResponse(BaseModel):

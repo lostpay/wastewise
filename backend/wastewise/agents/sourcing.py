@@ -28,8 +28,8 @@ def _fallback_note(unit_price: float, benchmark: float | None) -> str:
         return NO_BENCHMARK_NOTE
     if unit_price < benchmark:
         pct = round((benchmark - unit_price) / benchmark * 100)
-        return f"{pct}% under the US retail average."
-    return "At or above the US retail average."
+        return f"${unit_price:.2f} vs. US avg ${benchmark:.2f} ({pct}% under)."
+    return f"${unit_price:.2f} vs. US avg ${benchmark:.2f} (at or above)."
 
 
 def _choose_offer(llm, item: str, offers: list[SupplierPrice],
@@ -87,6 +87,7 @@ def source_order(items: list[dict], wholesale, retail, llm,
     savings = 0.0
     lines = []
     for (item, qty, benchmark, offers), (offer, note, live) in zip(prepared, resolved):
+        is_historical_benchmark = item.lower() in historical_items
         if offer is not None:
             supplier, unit_price = offer.supplier, offer.unit_price
         elif benchmark is not None:
@@ -95,17 +96,21 @@ def source_order(items: list[dict], wholesale, retail, llm,
             supplier, unit_price = "No price data", 0.0
         line_total = round(unit_price * qty, 2)
         total += line_total
-        # Only count savings when the benchmark is a real US retail
-        # average (FRED). Historical-average benchmarks are the item's own
-        # past purchase price -- comparing an offer to itself isn't a
-        # market saving, and used to inflate the total when the CSV was
-        # denominated in a non-USD currency.
-        if (benchmark is not None
-                and unit_price < benchmark
-                and item.lower() not in historical_items):
-            savings += (benchmark - unit_price) * qty
+        # Real US retail benchmark (FRED) -- the only kind that shows in the
+        # per-line `benchmark` field and counts toward `savings`. Historical
+        # benchmarks are the item's own past purchase price, not a market
+        # comparison. See api.py for how historical_items is derived.
+        real_benchmark = benchmark if not is_historical_benchmark else None
+        # Rewrite the note when the note-generator's benchmark was actually
+        # historical -- otherwise it would falsely claim "vs. US avg" using
+        # the historical average, and inflate/mislead the reader.
+        if is_historical_benchmark and note != NO_MATCH_NOTE:
+            note = NO_BENCHMARK_NOTE
+        if (real_benchmark is not None
+                and unit_price < real_benchmark):
+            savings += (real_benchmark - unit_price) * qty
         lines.append(POLine(item=item, qty=qty, supplier=supplier,
                             unit_price=unit_price, line_total=line_total,
-                            note=note, live=live))
+                            note=note, live=live, benchmark=real_benchmark))
     return SourcingResponse(lines=lines, total=round(total, 2),
                             savings=round(savings, 2))
