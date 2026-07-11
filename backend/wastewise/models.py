@@ -36,6 +36,10 @@ class AdjustedItem(BaseModel):
     # Pre-LLM buffered recommendation (forecast + safety buffer). Lets the UI
     # show the AI's true delta instead of blaming the buffer on the AI.
     recommended: float = 0.0
+    # Only set when the spoilage lookup for this item was live -- the UI must
+    # never render a fabricated shelf life from the conservative fallback.
+    spoilage_risk: str = ""
+    shelf_life_days: int | None = None
 
 
 class BacktestStats(BaseModel):
@@ -90,6 +94,12 @@ class WeatherInfo(BaseModel):
     condition: str
     temp_c: float
     precipitation_mm: float
+
+
+class SpoilageInfo(BaseModel):
+    risk: str                       # "high" | "medium" | "low"
+    shelf_life_days: int | None
+    live: bool
 
 
 class Holiday(BaseModel):
