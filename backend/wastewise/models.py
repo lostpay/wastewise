@@ -33,6 +33,9 @@ class AdjustedItem(BaseModel):
     reason: str
     live: bool
     daily: list[float] = []
+    # Pre-LLM buffered recommendation (forecast + safety buffer). Lets the UI
+    # show the AI's true delta instead of blaming the buffer on the AI.
+    recommended: float = 0.0
 
 
 class BacktestStats(BaseModel):

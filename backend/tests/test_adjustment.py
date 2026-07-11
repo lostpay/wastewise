@@ -24,7 +24,7 @@ class _PerItemLLM:
     item gets its own reasoning instead of a shared/copy-pasted one."""
     _RESPONSES = {
         "stew": '{"adjusted_qty": 130, "reason": "Rain drives comfort-food orders like stew up."}',
-        "salad greens": '{"adjusted_qty": 60, "reason": "Rain lowers dine-in demand for cold salad items."}',
+        "salad greens": '{"adjusted_qty": 70, "reason": "Rain lowers dine-in demand for cold salad items."}',
     }
 
     def complete(self, system, user):
@@ -39,7 +39,7 @@ def test_adjusts_each_item_with_genuinely_different_reasoning():
     out = adjust_forecast(_items(), _one_day(weather), [], _PerItemLLM())
     by_item = {o.item: o for o in out}
     assert by_item["stew"].adjusted_qty == 130
-    assert by_item["salad greens"].adjusted_qty == 60
+    assert by_item["salad greens"].adjusted_qty == 70
     assert by_item["stew"].reason != by_item["salad greens"].reason
     assert all(o.live for o in out)
 
@@ -115,3 +115,39 @@ def test_adjustment_preserves_daily_series():
     out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Clear", temp_c=25,
                           precipitation_mm=0)), [], _BadJsonLLM())
     assert out[0].daily == [14, 15, 14, 15, 14, 14, 14]
+
+
+class _ExtremeHighLLM:
+    def complete(self, system, user):
+        return '{"adjusted_qty": 9999, "reason": "Heat wave megaorder."}'
+
+
+class _ExtremeLowLLM:
+    def complete(self, system, user):
+        return '{"adjusted_qty": 1, "reason": "Nobody eats this week."}'
+
+
+def test_llm_adjustment_is_clamped_to_25_percent_up():
+    out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Heat", temp_c=38,
+                          precipitation_mm=0)), [], _ExtremeHighLLM())
+    by_item = {o.item: o for o in out}
+    # stew: recommended 115 -> ceiling 115 * 1.25 = 143.75
+    assert by_item["stew"].adjusted_qty == 143.75
+    assert by_item["stew"].live is True
+
+
+def test_llm_adjustment_is_clamped_to_25_percent_down():
+    out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Storm", temp_c=10,
+                          precipitation_mm=30)), [], _ExtremeLowLLM())
+    by_item = {o.item: o for o in out}
+    # salad greens: recommended 90 -> floor 90 * 0.75 = 67.5
+    assert by_item["salad greens"].adjusted_qty == 67.5
+
+
+def test_recommended_qty_is_carried_through_on_success_and_fallback():
+    ok = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Rain", temp_c=15,
+                         precipitation_mm=8)), [], _PerItemLLM())
+    assert {o.item: o.recommended for o in ok} == {"stew": 115, "salad greens": 90}
+    bad = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Clear", temp_c=25,
+                          precipitation_mm=0)), [], _BadJsonLLM())
+    assert {o.item: o.recommended for o in bad} == {"stew": 115, "salad greens": 90}
