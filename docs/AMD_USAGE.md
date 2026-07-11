@@ -70,17 +70,28 @@ KV cache size 373,344 tokens / 39.88 GiB available, max concurrency 9.11x,
 
 ## Benchmark
 
-Latency for one forecast-adjustment generation on the W7900 (vLLM):
+`rocm-smi --showuse` sampled while a generation is in flight, confirming the
+GPU is actively computing (not just holding the model resident in VRAM):
+
+```
+GPU[0]          : GPU use (%): 87
+```
+
+![rocm-smi showing 87% GPU utilization during inference](images/gpu-busy.png)
+
+vLLM's own periodic engine stats during real traffic (served over the public
+tunnel, from the deployed Render backend — remote IPs, not localhost):
 
 | metric | value |
 |---|---|
 | model | mistralai/Mistral-7B-Instruct-v0.3 |
-| prompt (adjustment step) | ~<n> tokens |
-| output tokens | ~<n> |
-| end-to-end latency | <paste> ms |
-| throughput | <paste> tok/s |
+| engine-reported avg prompt throughput | 169.6 tokens/s |
+| engine-reported avg generation throughput | 36.0 tokens/s |
+| prefix cache hit rate | 74.7% |
+| single end-to-end call latency (via public tunnel, ~500 max_tokens) | 26.73 s |
 
-Capture with a stopwatch on the `/forecast` call, or vLLM's own `--disable-log-stats`
-off (default) server metrics.
+![vLLM server log with real remote-IP requests and throughput stats](images/vllm-inference-log.png)
 
-_Screenshots: attach the JupyterLab terminal + `rocm-smi` panel below._
+The end-to-end latency is higher than the raw engine throughput implies because
+it includes the public tunnel hop (Render → ngrok → AMD box) on top of
+generation time — the engine-reported numbers isolate pure GPU throughput.
