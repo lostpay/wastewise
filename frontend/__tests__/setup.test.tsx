@@ -15,14 +15,24 @@ describe("Setup screen", () => {
     window.sessionStorage.clear();
   });
 
-  it("uses the demo dataset and advances to forecast", async () => {
+  it("uploads a CSV and advances to forecast", async () => {
+    vi.spyOn(api, "uploadCsv").mockResolvedValue({
+      dataset_id: "ds1",
+      summary: { dataset_id: "ds1", n_rows: 1, items: ["pork"], start_date: "2026-01-01", end_date: "2026-01-01" },
+    });
     renderWithWizard(<SetupPage />);
-    await userEvent.click(screen.getByRole("button", { name: /use demo dataset/i }));
+    const file = new File(["date,item,quantity\n2026-01-01,pork,1\n"], "sales.csv", { type: "text/csv" });
+    await userEvent.upload(screen.getByLabelText(/sales csv/i), file);
+    await userEvent.click(screen.getByRole("button", { name: /^upload/i }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/forecast"));
-    expect(JSON.parse(window.sessionStorage.getItem("ww_state")!).datasetId).toBe("demo");
+    expect(JSON.parse(window.sessionStorage.getItem("ww_state")!).datasetId).toBe("ds1");
   });
 
   it("clears prior forecast/sourcing/rationale when a new dataset is loaded", async () => {
+    vi.spyOn(api, "uploadCsv").mockResolvedValue({
+      dataset_id: "ds2",
+      summary: { dataset_id: "ds2", n_rows: 1, items: ["pork"], start_date: "2026-01-01", end_date: "2026-01-01" },
+    });
     // Seed state as if a previous run already produced results.
     renderWithWizard(<SetupPage />, {
       initial: {
@@ -32,10 +42,12 @@ describe("Setup screen", () => {
         rationale: { paragraph: "Stale rationale from the prior dataset.", live: true },
       },
     });
-    await userEvent.click(screen.getByRole("button", { name: /use demo dataset/i }));
+    const file = new File(["date,item,quantity\n2026-01-01,pork,1\n"], "sales.csv", { type: "text/csv" });
+    await userEvent.upload(screen.getByLabelText(/sales csv/i), file);
+    await userEvent.click(screen.getByRole("button", { name: /^upload/i }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/forecast"));
     const state = JSON.parse(window.sessionStorage.getItem("ww_state")!);
-    expect(state.datasetId).toBe("demo");
+    expect(state.datasetId).toBe("ds2");
     expect(state.forecast).toBeNull();
     expect(state.sourcing).toBeNull();
     expect(state.rationale).toBeNull();

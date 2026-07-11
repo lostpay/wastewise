@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { uploadCsv, ApiError } from "@/lib/api";
-import { setDemoMode, clearDemoServed, DEMO_HISTORY, DEMO_UPLOAD } from "@/lib/demo";
+import { setDemoMode, clearDemoServed, DEMO_UPLOAD } from "@/lib/demo";
 import { parseSalesHistory } from "@/lib/csv";
 import type { Currency, UploadResponse, HistoryPoint } from "@/lib/types";
 import { CURRENCY_OPTIONS } from "@/lib/types";
@@ -30,8 +30,8 @@ export default function SetupPage() {
 
   // Landing on Setup means "start over" — clear any dataset/forecast/sourcing
   // and any prior demo-mode flag so downstream guards (and the sidebar) refuse
-  // to jump ahead until the user picks a CSV or clicks demo again. Runs once
-  // per mount, after hydration, so a genuine advance() call isn't undone.
+  // to jump ahead until the user uploads a CSV. Runs once per mount, after
+  // hydration, so a genuine advance() call isn't undone.
   useEffect(() => {
     if (!hydrated || cleared.current) return;
     cleared.current = true;
@@ -87,19 +87,6 @@ export default function SetupPage() {
     }
   }
 
-  async function onDemo() {
-    setDemoMode(true);
-    setError(null);
-    setLoading(true);
-    try {
-      advance(await uploadCsv(new File([""], "demo.csv", { type: "text/csv" })), DEMO_HISTORY);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Upload failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   const [ly, lm, ld] = lastDate.split("-").map(Number);
   const startISO = new Date(Date.UTC(ly, lm - 1, ld + 1)).toISOString().slice(0, 10);
 
@@ -112,9 +99,7 @@ export default function SetupPage() {
         </h2>
         <div className="ww-rule mt-3 w-full text-foreground/40" />
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Upload your sales CSV, or click{" "}
-          <span className="font-medium text-foreground">Use demo dataset</span> to
-          walk the full flow with bundled sample data.
+          Upload your sales CSV to get started.
         </p>
       </div>
 
@@ -227,14 +212,6 @@ export default function SetupPage() {
           className="bg-foreground text-background hover:bg-foreground/80"
         >
           {loading ? "Uploading..." : "Upload & continue"}
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={onDemo}
-          disabled={loading}
-          className="border border-foreground/25 bg-transparent hover:bg-foreground/5"
-        >
-          Use demo dataset
         </Button>
       </div>
     </div>
