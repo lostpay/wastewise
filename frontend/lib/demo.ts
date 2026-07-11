@@ -15,6 +15,15 @@ export const DEMO_FORECAST: ForecastResponse = {
   baseline_delta: 0.18,
   waste_avoided_units: 34,
   waste_avoided_value: 61.5,
+  holdout_daily: [
+    { date: "2026-06-23", actual: 68, model: 71, baseline: 82, waste_model_value: 6.9, waste_baseline_value: 32.4 },
+    { date: "2026-06-24", actual: 74, model: 76, baseline: 79, waste_model_value: 6.3, waste_baseline_value: 11.5 },
+    { date: "2026-06-25", actual: 71, model: 72, baseline: 84, waste_model_value: 3.5, waste_baseline_value: 27.6 },
+    { date: "2026-06-26", actual: 82, model: 79, baseline: 74, waste_model_value: 0, waste_baseline_value: 0 },
+    { date: "2026-06-27", actual: 96, model: 92, baseline: 81, waste_model_value: 0, waste_baseline_value: 0 },
+    { date: "2026-06-28", actual: 90, model: 88, baseline: 84, waste_model_value: 3.2, waste_baseline_value: 0 },
+    { date: "2026-06-29", actual: 65, model: 68, baseline: 78, waste_model_value: 13.1, waste_baseline_value: 32.5 },
+  ],
   items: [
     { item: "cabbage", forecast: 168.0, adjusted_qty: 150.0, live: true,
       daily: [22, 23, 22, 24, 25, 26, 26],

@@ -76,3 +76,28 @@ def test_forecast_items_include_daily_series(sample_sales):
     for it in items:
         assert len(it.daily) == 7
         assert all(d >= 0 for d in it.daily)
+
+
+def test_backtest_exposes_holdout_daily_series(sample_sales):
+    # Frontend needs a per-day array (aggregated across items) to draw
+    # the "backtest replay" chart under the stat tiles.
+    _, stats = forecast_items(sample_sales, horizon_days=7)
+    assert 5 <= len(stats.holdout_daily) <= 7  # sample data has ≤7 test days
+    for d in stats.holdout_daily:
+        assert d.date  # ISO string
+        assert d.actual >= 0
+        assert d.model >= 0
+        assert d.baseline >= 0
+    # sample_sales has no `price` -> waste_*_value should be None on every row
+    assert all(d.waste_model_value is None for d in stats.holdout_daily)
+
+
+def test_backtest_holdout_daily_includes_dollar_waste_when_priced(sample_sales):
+    priced = [r.model_copy(update={"price": 2.0}) for r in sample_sales]
+    _, stats = forecast_items(priced, horizon_days=7)
+    assert len(stats.holdout_daily) > 0
+    for d in stats.holdout_daily:
+        assert d.waste_model_value is not None
+        assert d.waste_baseline_value is not None
+        assert d.waste_model_value >= 0
+        assert d.waste_baseline_value >= 0
