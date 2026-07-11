@@ -85,3 +85,10 @@ export interface RationaleResponse {
   paragraph: string;
   live: boolean;
 }
+
+export interface WhatIfResponse {
+  lines: POLine[];
+  total: number;
+  reply: string;
+  live: boolean;
+}

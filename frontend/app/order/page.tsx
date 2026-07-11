@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { poToCsv } from "@/lib/csv";
-import { runRationale } from "@/lib/api";
+import { runRationale, runWhatIf } from "@/lib/api";
 import { POTable } from "@/components/po-table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,9 @@ export default function OrderPage() {
   const { forecast, sourcing, rationale, hydrated, set } = useWizard();
   const [approved, setApproved] = useState(false);
   const [rationaleLoading, setRationaleLoading] = useState(false);
+  const [whatIfMsg, setWhatIfMsg] = useState("");
+  const [whatIfReply, setWhatIfReply] = useState<string | null>(null);
+  const [whatIfLoading, setWhatIfLoading] = useState(false);
   const started = useRef(false);
 
   useEffect(() => {
@@ -73,6 +76,25 @@ export default function OrderPage() {
     setApproved(false);
   }
 
+  async function askWhatIf(e: React.FormEvent) {
+    e.preventDefault();
+    if (!sourcing || !whatIfMsg.trim() || whatIfLoading) return;
+    setWhatIfLoading(true);
+    try {
+      const res = await runWhatIf(whatIfMsg.trim(), sourcing.lines, sourcing.total);
+      // The agent rewrote quantities -> the old rationale's figures are stale.
+      started.current = true;
+      set({ sourcing: { ...sourcing, lines: res.lines, total: res.total }, rationale: null });
+      setWhatIfReply(res.reply);
+      setApproved(false);
+      setWhatIfMsg("");
+    } catch {
+      setWhatIfReply("Something went wrong — the order was not changed.");
+    } finally {
+      setWhatIfLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <Link
@@ -109,6 +131,37 @@ export default function OrderPage() {
             </div>
           ) : (
             <p className="text-[11px] italic text-muted-foreground">Rationale unavailable.</p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <p className="ww-label mb-2">Negotiate the order</p>
+        <div className="space-y-3 border border-foreground/20 bg-card px-4 py-4">
+          <form onSubmit={askWhatIf} className="flex flex-wrap gap-2">
+            <input
+              type="text"
+              value={whatIfMsg}
+              onChange={(e) => setWhatIfMsg(e.target.value)}
+              maxLength={500}
+              placeholder='e.g. "keep it under $1,200" or "I already have 20 lbs of rice"'
+              aria-label="Instruction for the purchasing copilot"
+              className="min-w-0 flex-1 border border-foreground/25 bg-card px-3 py-2 text-sm focus:border-accent focus:outline-none"
+            />
+            <Button type="submit" disabled={whatIfLoading || !whatIfMsg.trim()}>
+              {whatIfLoading ? "Thinking…" : "Ask AI"}
+            </Button>
+          </form>
+          {whatIfReply ? (
+            <div className="space-y-1">
+              <span className="ww-label text-accent">AI copilot</span>
+              <p className="text-sm leading-relaxed text-foreground">{whatIfReply}</p>
+            </div>
+          ) : (
+            <p className="text-[11px] italic text-muted-foreground">
+              Tell the AI a budget, on-hand stock, or a scenario — it rewrites the
+              quantities below and explains the trade-off.
+            </p>
           )}
         </div>
       </div>
