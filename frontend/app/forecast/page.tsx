@@ -18,7 +18,13 @@ export default function ForecastPage() {
   const { datasetId, horizonDays, location, forecast, history, summary, hydrated, set } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
+
+  // Idempotency latch keyed on the actual inputs to the fetch. React 18
+  // StrictMode dev double-invoke would otherwise fire runForecast twice on
+  // the initial mount; the "already fired for THIS input" set only lets
+  // the first call through. Uses a ref so identity is preserved across the
+  // simulated remount that StrictMode does within the same logical mount.
+  const firedFor = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!hydrated) return;
@@ -26,8 +32,10 @@ export default function ForecastPage() {
       router.push("/setup");
       return;
     }
-    if (forecast || started.current) return;
-    started.current = true;
+    if (forecast) return;
+    const key = `${datasetId}|${horizonDays}|${location}`;
+    if (firedFor.current.has(key)) return;
+    firedFor.current.add(key);
     setLoading(true);
     setError(null);
     runForecast(datasetId, horizonDays, location)
@@ -35,13 +43,6 @@ export default function ForecastPage() {
       .catch((e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Please try again."))
       .finally(() => setLoading(false));
   }, [hydrated, datasetId, horizonDays, location, forecast, router, set]);
-
-  // Reset the "already started" latch whenever the inputs to the forecast
-  // change -- so clearing `forecast` from setup (e.g. after picking a new
-  // horizon) actually re-runs the fetch instead of being ignored.
-  useEffect(() => {
-    started.current = false;
-  }, [datasetId, horizonDays, location]);
 
   if (hydrated && !datasetId)
     return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
@@ -87,22 +88,60 @@ export default function ForecastPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <StatTile
-              label="Forecast accuracy gain vs. simple seasonal baseline"
+              label="Forecast accuracy"
               value={`${Math.round(forecast.baseline_delta * 100)}%`}
-              hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Higher is better."
+              kicker="more accurate than a rule-of-thumb forecast"
+              hint="On your last 7 days of sales, our model was closer to what actually sold than a simple 'same day last week' guess."
             />
             {(forecast.waste_avoided_units ?? 0) > 0 ? (
               <StatTile
-                label="Over-ordering avoided vs. baseline"
+                label="Waste avoided"
+                accent
                 value={
                   forecast.waste_avoided_value != null
                     ? `$${forecast.waste_avoided_value.toFixed(2)}`
                     : `${(forecast.waste_avoided_units ?? 0).toFixed(0)} units`
                 }
-                hint="Same 7-day holdout: what a naive same-weekday ordering policy would have over-bought, minus this model's over-buy — both with the 15% safety buffer."
+                kicker={
+                  forecast.waste_avoided_value != null
+                    ? "money you didn't waste on over-ordering"
+                    : "units you didn't waste on over-ordering"
+                }
+                hint="Compared to that same simple guess, our model would have bought less food that wouldn't sell — over the same 7 days."
               />
             ) : null}
           </div>
+          <details className="group border border-dashed border-foreground/20 bg-card px-4 py-3">
+            <summary className="ww-label cursor-pointer text-muted-foreground group-hover:text-foreground">
+              How is this measured?
+            </summary>
+            <div className="mt-3 space-y-2 text-[11px] leading-relaxed text-muted-foreground">
+              <p>
+                We take the last 7 days of your uploaded sales history and hide
+                them from the model. We train on everything before that, ask
+                the model to predict those 7 hidden days, and compare its
+                predictions to what actually sold.
+              </p>
+              <p>
+                <span className="ww-label text-foreground">Baseline: </span>
+                a naive rule &mdash; &ldquo;next Monday will sell what last
+                Monday sold.&rdquo; This is what a restaurant would do
+                without any modelling.
+              </p>
+              <p>
+                <span className="ww-label text-foreground">Accuracy: </span>
+                percent reduction in mean absolute error (average distance
+                between predicted and actual, in units) vs. the naive rule.
+              </p>
+              <p>
+                <span className="ww-label text-foreground">Waste avoided: </span>
+                dollars (or units, if your CSV had no price column) of
+                over-ordering the naive rule would have caused, minus the
+                over-ordering our model would have caused &mdash; both with
+                a 15% safety buffer applied.
+              </p>
+            </div>
+          </details>
           <div className="border border-foreground/20 bg-card">
             <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
               <p className="ww-label">Fig. 1 — Per-item quantities</p>
