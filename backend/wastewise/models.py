@@ -72,12 +72,18 @@ class POLine(BaseModel):
     # `savings` at the response level only counts rows where this is not None.
     benchmark: float | None = None
     unit: str = ""
+    # True when the AI (or the deterministic price guard) says this price is
+    # bad enough that the buyer should trim, substitute, or shop elsewhere.
+    flagged: bool = False
 
 
 class SourcingResponse(BaseModel):
     lines: list[POLine]
     total: float
     savings: float
+    # Sum of (unit_price - US benchmark) * qty over lines priced above their
+    # real benchmark -- the honest counterweight to `savings`.
+    overpay: float = 0.0
 
 
 class WeatherInfo(BaseModel):

@@ -178,3 +178,41 @@ def test_po_line_carries_offer_unit():
     resp = source_order([{"item": "cabbage", "qty": 3}],
                         _Wholesale(), _Retail(), _BadLLM(), "40.7,-74.0")
     assert resp.lines[0].unit == "1 lb"
+
+
+def test_overpriced_pick_is_flagged_and_overpay_totalled():
+    # _SelectingLLM picks index 1 at 4.5; benchmark 2.0 -> 4.5 > 1.25 * 2.0,
+    # so the deterministic guard flags it even though the LLM said nothing.
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetail(), _SelectingLLM(), "loc")
+    assert resp.lines[0].flagged is True
+    assert resp.overpay == 5.0  # (4.5 - 2.0) * 2
+
+
+class _CautionLLM:
+    def complete(self, system, user):
+        return json.dumps({"index": 1, "reason": "All candidates run well above the US average.",
+                           "verdict": "caution"})
+
+
+def test_llm_caution_verdict_flags_the_line():
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetail(), _CautionLLM(), "loc")
+    assert resp.lines[0].flagged is True
+    assert resp.lines[0].note == "All candidates run well above the US average."
+
+
+def test_cheap_pick_is_not_flagged_and_overpay_zero():
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _Wholesale(), _Retail(), _FakeLLM(), "loc")
+    assert resp.lines[0].flagged is False
+    assert resp.overpay == 0.0
+
+
+def test_historical_benchmark_does_not_drive_the_price_guard():
+    # Historical items get real_benchmark None -> guard can't fire on them.
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _Wholesale(), _Retail(), _FakeLLM(), "loc",
+                        historical_items={"cabbage"})
+    assert resp.lines[0].flagged is False
+    assert resp.overpay == 0.0
