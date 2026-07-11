@@ -12,7 +12,7 @@ Built solo for the [AMD Developer Hackathon: ACT II](https://lablab.ai/ai-hackat
 
 ## Live demo
 
-- **App:** https://wastewise-theta.vercel.app
+- **App:** https://wastewise-theta.vercel.app — deployed on Vercel
 - **API:** https://wastewise-backend.onrender.com ([health](https://wastewise-backend.onrender.com/health)) — free tier, first request may cold-start ~30–60 s
 - **Demo video (~90 s):** <!-- TODO: add video link -->
 - **Slide deck (PDF):** <!-- TODO: add deck link/path -->
