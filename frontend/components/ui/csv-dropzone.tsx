@@ -42,6 +42,7 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ columns: string[]; rows: number } | null>(null);
+  const [loadingDemo, setLoadingDemo] = useState(false);
 
   const pick = useCallback(
     async (file: File | null) => {
@@ -95,9 +96,33 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
     a.click();
   }
 
+  async function useDemoDataset(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (disabled || loadingDemo) return;
+    setLoadingDemo(true);
+    try {
+      const res = await fetch(SAMPLE_CSV_URL);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      await pick(new File([blob], "wastewise-sample.csv", { type: "text/csv" }));
+    } catch {
+      setError("Couldn't load the demo dataset. Please try again.");
+    } finally {
+      setLoadingDemo(false);
+    }
+  }
+
   return (
     <div className="space-y-2">
-      <div className="flex items-baseline justify-end">
+      <div className="flex items-baseline justify-end gap-4">
+        <button
+          type="button"
+          onClick={useDemoDataset}
+          disabled={disabled || loadingDemo}
+          className="ww-label text-accent hover:underline disabled:pointer-events-none disabled:opacity-60"
+        >
+          {loadingDemo ? "Loading demo..." : "Use demo dataset"}
+        </button>
         <button
           type="button"
           onClick={downloadSample}

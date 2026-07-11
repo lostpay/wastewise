@@ -99,7 +99,9 @@ export default function SetupPage() {
         </h2>
         <div className="ww-rule mt-3 w-full text-foreground/40" />
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Upload your sales CSV to get started.
+          Upload your sales CSV to get started, or click{" "}
+          <span className="font-medium text-foreground">Use demo dataset</span>{" "}
+          below to drop in sample data.
         </p>
       </div>
 
