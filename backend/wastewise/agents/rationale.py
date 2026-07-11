@@ -1,3 +1,5 @@
+import sys
+
 from wastewise.models import AdjustedItem, POLine, RationaleResponse
 
 SYSTEM = (
@@ -39,6 +41,8 @@ def write_rationale(items: list[AdjustedItem], lines: list[POLine],
         if not paragraph:
             raise ValueError("empty completion")
         return RationaleResponse(paragraph=paragraph, live=True)
-    except Exception:
+    except Exception as e:
+        print(f"[rationale] LLM call failed: {type(e).__name__}: {e}",
+              file=sys.stderr, flush=True)
         return RationaleResponse(
             paragraph=_fallback_paragraph(items, lines, savings, total), live=False)

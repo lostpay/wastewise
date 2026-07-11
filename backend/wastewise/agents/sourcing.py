@@ -1,3 +1,4 @@
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
 from wastewise.models import POLine, SourcingResponse, SupplierPrice
@@ -54,7 +55,9 @@ def _choose_offer(llm, item: str, offers: list[SupplierPrice],
         if not (0 <= idx < len(offers)) or not reason:
             raise ValueError("bad selection")
         return offers[idx], reason, True
-    except Exception:
+    except Exception as e:
+        print(f"[sourcing] LLM call failed for {item!r}: "
+              f"{type(e).__name__}: {e}", file=sys.stderr, flush=True)
         return fallback_best, _fallback_note(fallback_best.unit_price, benchmark), False
 
 
@@ -80,7 +83,7 @@ def source_order(items: list[dict], wholesale, retail, llm,
     # Choosing an offer and writing its note is an independent LLM call per
     # item -- run them concurrently instead of one at a time, since each
     # round trip dominates wall time otherwise.
-    with ThreadPoolExecutor(max_workers=min(8, len(prepared)) or 1) as pool:
+    with ThreadPoolExecutor(max_workers=min(3, len(prepared)) or 1) as pool:
         resolved = list(pool.map(_resolve, prepared))
 
     total = 0.0

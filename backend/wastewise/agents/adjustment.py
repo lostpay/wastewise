@@ -1,4 +1,5 @@
 import datetime
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
 from wastewise.models import ForecastItem, AdjustedItem, WeatherInfo, Holiday
@@ -48,7 +49,9 @@ def _adjust_one(item: ForecastItem, weather_txt: str, holiday_txt: str, llm) -> 
         return AdjustedItem(item=item.item, forecast=item.forecast,
                             adjusted_qty=adjusted_qty, reason=reason, live=True,
                             daily=item.daily)
-    except Exception:
+    except Exception as e:
+        print(f"[adjustment] LLM call failed for {item.item!r}: "
+              f"{type(e).__name__}: {e}", file=sys.stderr, flush=True)
         return AdjustedItem(item=item.item, forecast=item.forecast,
                             adjusted_qty=item.recommended_purchase_qty,
                             reason=FALLBACK_REASON, live=False, daily=item.daily)
@@ -66,5 +69,5 @@ def adjust_forecast(items: list[ForecastItem],
     # One call per item, run concurrently -- each item only sees its own name
     # and quantity, so the model structurally cannot copy-paste reasoning
     # across items regardless of prompt wording (see SYSTEM above).
-    with ThreadPoolExecutor(max_workers=min(8, len(items)) or 1) as pool:
+    with ThreadPoolExecutor(max_workers=min(3, len(items)) or 1) as pool:
         return list(pool.map(_adjust_one_partial, items))

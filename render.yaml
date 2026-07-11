@@ -16,7 +16,7 @@ services:
       - key: LLM_BASE_URL
         value: https://api.fireworks.ai/inference/v1
       - key: LLM_MODEL
-        value: accounts/fireworks/models/llama-v3p1-8b-instruct
+        value: accounts/fireworks/models/gpt-oss-120b
       - key: LLM_API_KEY
         sync: false
       - key: FRED_API_KEY
