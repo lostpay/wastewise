@@ -34,6 +34,8 @@ export interface ForecastAdjustedItem {
   // Buffered recommendation before the AI adjustment. Optional: demo
   // fixtures and old persisted sessions don't have it — fall back to forecast.
   recommended?: number;
+  spoilage_risk?: string;          // "high" | "medium" | "low" | ""
+  shelf_life_days?: number | null;
 }
 
 export interface AdjustmentSummary {

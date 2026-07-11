@@ -65,8 +65,9 @@ export default function ForecastPage() {
         <div className="ww-rule mt-3 w-full text-foreground/40" />
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Per-item demand for the {rangeLabel}. The base model predicts sales
-          from your history and adds a safety buffer; an AI agent then adjusts
-          only when weather or holidays warrant it, capped at ±25%.
+          from your history and adds a spoilage-aware safety buffer (5–15% by
+          shelf life); an AI agent then adjusts only when weather or holidays
+          warrant it, capped at ±25%.
         </p>
       </div>
 
@@ -92,7 +93,7 @@ export default function ForecastPage() {
                     ? `$${forecast.waste_avoided_value.toFixed(2)}`
                     : `${(forecast.waste_avoided_units ?? 0).toFixed(0)} units`
                 }
-                hint="Same 7-day holdout: what a naive same-weekday ordering policy would have over-bought, minus this model's over-buy — both with the 15% safety buffer."
+                hint="Same 7-day holdout: what a naive same-weekday ordering policy would have over-bought, minus this model's over-buy — both with the same 15% buffer (the backtest compares policies, not the spoilage-aware buffers)."
               />
             ) : null}
             {forecast.adjustment ? (
@@ -157,7 +158,17 @@ export default function ForecastPage() {
                     return (
                       <Fragment key={it.item}>
                         <tr className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}>
-                          <td className="px-4 py-3 text-sm font-medium capitalize">{it.item}</td>
+                          <td className="px-4 py-3 text-sm font-medium capitalize">
+                            {it.item}
+                            {it.spoilage_risk === "high" ? (
+                              <span className="ww-label ml-2 text-amber-700">high spoilage</span>
+                            ) : null}
+                            {it.shelf_life_days != null ? (
+                              <span className="ww-num block text-[10px] font-normal normal-case text-muted-foreground">
+                                ~{it.shelf_life_days}-day shelf life
+                              </span>
+                            ) : null}
+                          </td>
                           <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
                             {it.forecast.toFixed(1)}
                           </td>
