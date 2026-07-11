@@ -11,7 +11,7 @@ describe("wizard store", () => {
   it("exposes sensible defaults", () => {
     const { result } = renderHook(() => useWizard(), { wrapper });
     expect(result.current.location).toBe("40.7,-74.0");
-    expect(result.current.horizon).toBe("week");
+    expect(result.current.horizonDays).toBe(7);
     expect(result.current.datasetId).toBeNull();
   });
 
@@ -23,10 +23,10 @@ describe("wizard store", () => {
   });
 
   it("rehydrates persisted state on mount", () => {
-    window.sessionStorage.setItem("ww_state", JSON.stringify({ datasetId: "seed", horizon: "day" }));
+    window.sessionStorage.setItem("ww_state", JSON.stringify({ datasetId: "seed", horizonDays: 3 }));
     const { result } = renderHook(() => useWizard(), { wrapper });
     expect(result.current.datasetId).toBe("seed");
-    expect(result.current.horizon).toBe("day");
+    expect(result.current.horizonDays).toBe(3);
   });
 
   it("exposes a reactive hydrated flag that becomes true after mount", () => {

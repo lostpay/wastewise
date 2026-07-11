@@ -5,12 +5,8 @@ from wastewise.agents.adjustment import adjust_forecast
 from wastewise.agents.sourcing import source_order
 from wastewise.agents.rationale import write_rationale
 
-_HORIZON = {"day": 1, "week": 7}
-
-
-def run_forecast(records: list[SalesRecord], horizon: str, location: str,
+def run_forecast(records: list[SalesRecord], horizon_days: int, location: str,
                  weather_src, holiday_src, llm) -> ForecastResponse:
-    horizon_days = _HORIZON[horizon]
     first_hist = min(r.date for r in records)
     last_day = max(r.date for r in records)
     first_future = last_day + datetime.timedelta(days=1)

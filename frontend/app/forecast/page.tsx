@@ -15,7 +15,7 @@ import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function ForecastPage() {
   const router = useRouter();
-  const { datasetId, horizon, location, forecast, history, hydrated, set } = useWizard();
+  const { datasetId, horizonDays, location, forecast, history, summary, hydrated, set } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -30,14 +30,23 @@ export default function ForecastPage() {
     started.current = true;
     setLoading(true);
     setError(null);
-    runForecast(datasetId, horizon, location)
+    runForecast(datasetId, horizonDays, location)
       .then((res) => set({ forecast: res }))
       .catch((e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Please try again."))
       .finally(() => setLoading(false));
-  }, [hydrated, datasetId, horizon, location, forecast, router, set]);
+  }, [hydrated, datasetId, horizonDays, location, forecast, router, set]);
 
   if (hydrated && !datasetId)
     return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
+
+  const rangeLabel = (() => {
+    if (!summary) return `next ${horizonDays} day${horizonDays === 1 ? "" : "s"}`;
+    const [y, m, d] = summary.end_date.split("-").map(Number);
+    const start = new Date(Date.UTC(y, m - 1, d + 1));
+    const end = new Date(Date.UTC(y, m - 1, d + horizonDays));
+    const f = (x: Date) => x.toISOString().slice(0, 10);
+    return `next ${horizonDays} day${horizonDays === 1 ? "" : "s"} (${f(start)} – ${f(end)})`;
+  })();
 
   return (
     <div className="space-y-8">
@@ -55,7 +64,7 @@ export default function ForecastPage() {
         </h2>
         <div className="ww-rule mt-3 w-full text-foreground/40" />
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Per-item demand for the next {horizon}. The base model predicts sales
+          Per-item demand for the {rangeLabel}. The base model predicts sales
           from your history; an LLM then nudges each quantity up or down for
           weather and public holidays.
         </p>

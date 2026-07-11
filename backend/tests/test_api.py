@@ -49,7 +49,7 @@ def test_upload_then_forecast_then_sourcing(tmp_path):
     ds_id = r.json()["dataset_id"]
     assert r.json()["summary"]["n_rows"] == 28
 
-    f = client.post("/forecast", json={"dataset_id": ds_id, "horizon": "week",
+    f = client.post("/forecast", json={"dataset_id": ds_id, "horizon_days": 7,
                     "location": "40.7,-74.0"})
     assert f.status_code == 200
     items = f.json()["items"]
@@ -63,7 +63,7 @@ def test_upload_then_forecast_then_sourcing(tmp_path):
 
 def test_forecast_rejects_malformed_location(tmp_path):
     client = _client(tmp_path)
-    r = client.post("/forecast", json={"dataset_id": "x", "horizon": "week",
+    r = client.post("/forecast", json={"dataset_id": "x", "horizon_days": 7,
                     "location": "not-a-latlon"})
     assert r.status_code == 422
     api.app.dependency_overrides.clear()
@@ -181,4 +181,13 @@ def test_rationale_endpoint_returns_paragraph_and_live_flag(tmp_path):
     data = r.json()
     assert data["paragraph"] == "note"  # _LLM.complete always returns "note"
     assert data["live"] is True
+    api.app.dependency_overrides.clear()
+
+
+def test_forecast_rejects_out_of_range_horizon(tmp_path):
+    client = _client(tmp_path)
+    for bad in (0, 15):
+        r = client.post("/forecast", json={"dataset_id": "x", "horizon_days": bad,
+                        "location": "40.7,-74.0"})
+        assert r.status_code == 422
     api.app.dependency_overrides.clear()

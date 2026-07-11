@@ -5,13 +5,14 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { uploadCsv, ApiError } from "@/lib/api";
-import { setDemoMode, clearDemoServed, DEMO_HISTORY } from "@/lib/demo";
+import { setDemoMode, clearDemoServed, DEMO_HISTORY, DEMO_UPLOAD } from "@/lib/demo";
 import { parseSalesHistory } from "@/lib/csv";
-import type { Currency, Horizon, UploadResponse, HistoryPoint } from "@/lib/types";
+import type { Currency, UploadResponse, HistoryPoint } from "@/lib/types";
 import { CURRENCY_OPTIONS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { CsvDropzone } from "@/components/ui/csv-dropzone";
 import { Label } from "@/components/ui/label";
+import { HorizonCalendar } from "@/components/ui/horizon-calendar";
 
 const LocationPicker = dynamic(
   () => import("@/components/ui/location-picker").then((m) => m.LocationPicker),
@@ -20,10 +21,11 @@ const LocationPicker = dynamic(
 
 export default function SetupPage() {
   const router = useRouter();
-  const { location, horizon, currency, datasetId, hydrated, set } = useWizard();
+  const { location, horizonDays, currency, datasetId, hydrated, set } = useWizard();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastDate, setLastDate] = useState<string>(DEMO_UPLOAD.summary.end_date);
   const cleared = useRef(false);
 
   // Landing on Setup means "start over" — clear any dataset/forecast/sourcing
@@ -39,6 +41,29 @@ export default function SetupPage() {
       set({ datasetId: null, summary: null, forecast: null, sourcing: null, rationale: null, history: null });
     }
   }, [hydrated, datasetId, set]);
+
+  // The forecast starts the day after the data ends, so the calendar anchor is
+  // the CSV's last date. Parse the chosen file client-side to find it; with no
+  // file (incl. the demo path) fall back to the demo dataset's known end date.
+  useEffect(() => {
+    if (!file) {
+      setLastDate(DEMO_UPLOAD.summary.end_date);
+      return;
+    }
+    let cancelled = false;
+    file.text()
+      .then((text) => {
+        if (cancelled) return;
+        const dates = parseSalesHistory(text).map((p) => p.date).sort();
+        setLastDate(dates.length ? dates[dates.length - 1] : DEMO_UPLOAD.summary.end_date);
+      })
+      .catch(() => {
+        if (!cancelled) setLastDate(DEMO_UPLOAD.summary.end_date);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [file]);
 
   function advance(res: UploadResponse, history: HistoryPoint[] | null) {
     // Clear any forecast/sourcing from a prior dataset. The forecast and
@@ -74,6 +99,9 @@ export default function SetupPage() {
       setLoading(false);
     }
   }
+
+  const [ly, lm, ld] = lastDate.split("-").map(Number);
+  const startISO = new Date(Date.UTC(ly, lm - 1, ld + 1)).toISOString().slice(0, 10);
 
   return (
     <div className="space-y-8">
@@ -124,18 +152,16 @@ export default function SetupPage() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="horizon" className="ww-label">
-          1.4 &mdash; Horizon
-        </Label>
-        <select
-          id="horizon"
-          className="ww-num h-9 w-full border border-foreground/25 bg-card px-3 text-sm focus:border-accent focus:outline-none"
-          value={horizon}
-          onChange={(e) => set({ horizon: e.target.value as Horizon })}
-        >
-          <option value="day">Next day</option>
-          <option value="week">Next week</option>
-        </select>
+        <p className="ww-label">1.4 &mdash; Forecast horizon</p>
+        <HorizonCalendar
+          start={startISO}
+          days={horizonDays}
+          onChange={(d) => set({ horizonDays: d })}
+        />
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Forecasts start the day after your data ends. Pick an end date up to 14
+          days out &mdash; beyond that, weather forecasts aren&rsquo;t available.
+        </p>
       </div>
 
       {error && (

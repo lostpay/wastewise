@@ -22,7 +22,7 @@ const STEPS: Step[] = [
 export function Stepper({ current }: { current?: number } = {}) {
   const wizard = useContext(WizardContext);
   const pathname = usePathname();
-  const horizon = wizard?.horizon;
+  const horizonDays = wizard?.horizonDays;
   const location = wizard?.location;
   const datasetId = wizard?.datasetId ?? null;
   const forecast = wizard?.forecast ?? null;
@@ -96,14 +96,14 @@ export function Stepper({ current }: { current?: number } = {}) {
         </ol>
       </div>
 
-      {(datasetId || horizon || location) && (
+      {(datasetId || horizonDays || location) && (
         <div className="mt-8 hidden border-t border-foreground/15 pt-4 md:block">
           <p className="ww-label mb-3">§ Parameters</p>
           <dl className="space-y-2 text-[11px]">
-            {horizon && (
+            {horizonDays && (
               <div className="flex items-baseline justify-between gap-2">
                 <dt className="ww-label text-muted-foreground">Horizon</dt>
-                <dd className="ww-num capitalize">{horizon}</dd>
+                <dd className="ww-num">{horizonDays} day{horizonDays === 1 ? "" : "s"}</dd>
               </div>
             )}
             {location && (

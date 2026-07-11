@@ -1,13 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import type { DatasetSummary, ForecastResponse, SourcingResponse, RationaleResponse, Horizon, Currency, HistoryPoint } from "./types";
+import type { DatasetSummary, ForecastResponse, SourcingResponse, RationaleResponse, Currency, HistoryPoint } from "./types";
 
 const KEY = "ww_state";
 
 interface WizardState {
   location: string;
-  horizon: Horizon;
+  horizonDays: number;
   currency: Currency;
   datasetId: string | null;
   summary: DatasetSummary | null;
@@ -19,7 +19,7 @@ interface WizardState {
 
 const DEFAULTS: WizardState = {
   location: "40.7,-74.0",
-  horizon: "week",
+  horizonDays: 7,
   currency: "USD",
   datasetId: null,
   summary: null,

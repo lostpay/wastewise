@@ -1,4 +1,3 @@
-export type Horizon = "day" | "week";
 export type Currency = "USD" | "INR" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD" | "CNY";
 
 export const CURRENCY_OPTIONS: { code: Currency; label: string }[] = [

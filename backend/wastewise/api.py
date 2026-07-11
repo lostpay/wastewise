@@ -2,10 +2,9 @@
 import re
 import sys
 from contextlib import asynccontextmanager
-from typing import Literal
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from wastewise.config import get_settings
 from wastewise.storage import DatasetStore
 from wastewise.ingest import parse_sales_csv, summarize
@@ -77,7 +76,10 @@ class _LocatedRequest(BaseModel):
 
 class ForecastRequest(_LocatedRequest):
     dataset_id: str
-    horizon: Literal["day", "week"] = "week"
+    # Number of consecutive days to forecast, starting the day after the
+    # dataset's last date. Capped at 14: beyond ~16 days the weather source
+    # (Open-Meteo) stops returning real forecasts and adjustments go neutral.
+    horizon_days: int = Field(default=7, ge=1, le=14)
 
 
 class SourcingItem(BaseModel):
@@ -127,7 +129,7 @@ def forecast(req: ForecastRequest, deps: dict = Depends(get_deps)):
         records = deps["store"].load(req.dataset_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="dataset not found")
-    return run_forecast(records, req.horizon, req.location,
+    return run_forecast(records, req.horizon_days, req.location,
                         deps["weather"], deps["holidays"], deps["llm"])
 
 

@@ -45,7 +45,7 @@ def test_end_to_end_demo(tmp_path):
         r = client.post("/upload", files={"file": ("demo.csv", fh, "text/csv")})
     ds_id = r.json()["dataset_id"]
 
-    f = client.post("/forecast", json={"dataset_id": ds_id, "horizon": "week"})
+    f = client.post("/forecast", json={"dataset_id": ds_id, "horizon_days": 7})
     assert f.status_code == 200
     items = f.json()["items"]
     assert len(items) == 3

@@ -1,4 +1,4 @@
-import type { UploadResponse, ForecastResponse, SourcingResponse, RationaleResponse, ForecastAdjustedItem, POLine, Horizon, Currency } from "./types";
+import type { UploadResponse, ForecastResponse, SourcingResponse, RationaleResponse, ForecastAdjustedItem, POLine, Currency } from "./types";
 import { DEMO_UPLOAD, DEMO_FORECAST, DEMO_SOURCING, DEMO_RATIONALE, isDemoMode, markDemoServed } from "./demo";
 
 export class ApiError extends Error {
@@ -64,8 +64,8 @@ export function uploadCsv(file: File): Promise<UploadResponse> {
   return call("/upload", { method: "POST", body: form }, DEMO_UPLOAD);
 }
 
-export function runForecast(datasetId: string, horizon: Horizon, location: string): Promise<ForecastResponse> {
-  return call("/forecast", jsonInit({ dataset_id: datasetId, horizon, location }), DEMO_FORECAST);
+export function runForecast(datasetId: string, horizonDays: number, location: string): Promise<ForecastResponse> {
+  return call("/forecast", jsonInit({ dataset_id: datasetId, horizon_days: horizonDays, location }), DEMO_FORECAST);
 }
 
 export function runSourcing(
