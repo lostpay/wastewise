@@ -125,7 +125,21 @@ export default function SetupPage() {
 
       <div>
         <p className="ww-label mb-2">1.2 &mdash; Location</p>
-        <LocationPicker value={location} onChange={(v) => set({ location: v })} />
+        <LocationPicker
+          value={location}
+          onChange={(v) =>
+            // Location feeds weather + holidays into the LLM adjustment, so
+            // changing it invalidates the cached forecast (and everything
+            // downstream). Otherwise the wizard shows the previous location's
+            // Recommended bars even after the user picks a new place.
+            set({
+              location: v,
+              forecast: null,
+              sourcing: null,
+              rationale: null,
+            })
+          }
+        />
       </div>
 
       <div className="space-y-2">
@@ -136,7 +150,17 @@ export default function SetupPage() {
           id="currency"
           className="ww-num h-9 w-full border border-foreground/25 bg-card px-3 text-sm focus:border-accent focus:outline-none"
           value={currency}
-          onChange={(e) => set({ currency: e.target.value as Currency })}
+          onChange={(e) =>
+            // Currency drives price conversion in sourcing (and, on the
+            // forecast-currency PR, in the over-ordering metric). Clear
+            // cached results so the wizard re-runs with the new setting.
+            set({
+              currency: e.target.value as Currency,
+              forecast: null,
+              sourcing: null,
+              rationale: null,
+            })
+          }
         >
           {CURRENCY_OPTIONS.map((c) => (
             <option key={c.code} value={c.code}>
