@@ -1,14 +1,21 @@
 # wastewise/forecasting/forecaster.py
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 from wastewise.models import SalesRecord, ForecastItem, BacktestStats
 from wastewise.forecasting.features import build_frame
 from wastewise.forecasting.baseline import baseline_forecast
 
+if TYPE_CHECKING:
+    from xgboost import XGBRegressor
+
 FEATURES = ["dow", "weekofyear", "month", "lag7", "roll7", "item_code", "is_holiday"]
 
 
-def _train(df: pd.DataFrame):
+def _train(df: pd.DataFrame) -> "XGBRegressor":
+    # Imported lazily (rather than at module scope) so tests can monkeypatch
+    # sys.modules["xgboost"] with a fake regressor without xgboost installed.
     from xgboost import XGBRegressor
 
     train = df.dropna(subset=FEATURES)

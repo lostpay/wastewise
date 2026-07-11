@@ -5,7 +5,7 @@ import types
 import numpy as np
 
 from wastewise.models import WeatherInfo, SupplierPrice, AdjustedItem, POLine
-from wastewise.pipeline import run_forecast, run_sourcing, run_rationale
+from wastewise.pipeline import run_forecast, run_sourcing, run_rationale, _location_signal
 
 
 class _Weather:
@@ -70,6 +70,68 @@ def test_run_forecast_changes_with_location(monkeypatch, sample_sales):
     assert resp_malaysia.location_considered is True
     assert resp_malaysia.location_signal > resp_london.location_signal
     assert resp_london.items[0].adjusted_qty != resp_malaysia.items[0].adjusted_qty
+
+
+def test_location_signal_empty_weather_is_ignored():
+    considered, signal, reason, multiplier = _location_signal([])
+    assert considered is False
+    assert signal == 0.0
+    assert multiplier == 1.0
+    assert "No weather data" in reason
+
+
+def test_location_signal_all_unknown_condition_is_ignored():
+    day = datetime.date(2026, 4, 1)
+    weather = [(day, WeatherInfo(condition="unknown", temp_c=20, precipitation_mm=0))]
+    considered, signal, reason, multiplier = _location_signal(weather)
+    assert considered is False
+    assert signal == 0.0
+    assert multiplier == 1.0
+    assert "neutral" in reason
+
+
+def test_location_signal_below_threshold_is_ignored():
+    d1, d2 = datetime.date(2026, 4, 1), datetime.date(2026, 4, 2)
+    # temp span 2.9 -> signal = min(2.9/20, 0.2) = 0.145, just under the 0.15 cutoff
+    weather = [
+        (d1, WeatherInfo(condition="Clear", temp_c=20.0, precipitation_mm=0)),
+        (d2, WeatherInfo(condition="Clear", temp_c=22.9, precipitation_mm=0)),
+    ]
+    considered, signal, reason, multiplier = _location_signal(weather)
+    assert considered is False
+    assert signal < 0.15
+    assert multiplier == 1.0
+    assert "too small" in reason
+
+
+def test_location_signal_at_threshold_is_considered():
+    d1, d2 = datetime.date(2026, 4, 1), datetime.date(2026, 4, 2)
+    # temp span 3.0 -> signal = min(3.0/20, 0.2) = 0.15, exactly at the cutoff
+    weather = [
+        (d1, WeatherInfo(condition="Clear", temp_c=20.0, precipitation_mm=0)),
+        (d2, WeatherInfo(condition="Clear", temp_c=23.0, precipitation_mm=0)),
+    ]
+    considered, signal, reason, multiplier = _location_signal(weather)
+    assert considered is True
+    assert signal == 0.15
+    assert multiplier == round(1.0 + 0.15 * 0.08, 4)
+    assert "material" in reason
+
+
+def test_location_signal_caps_at_full_strength():
+    days = [datetime.date(2026, 4, i) for i in (1, 2, 3)]
+    # every day rainy, heavy precip, and a wide temp span -> each term hits its
+    # own cap (0.5 + 0.3 + 0.2), so signal saturates at 1.0
+    weather = [
+        (days[0], WeatherInfo(condition="Heavy rain", temp_c=10.0, precipitation_mm=25)),
+        (days[1], WeatherInfo(condition="Heavy rain", temp_c=20.0, precipitation_mm=25)),
+        (days[2], WeatherInfo(condition="Heavy rain", temp_c=30.0, precipitation_mm=25)),
+    ]
+    considered, signal, reason, multiplier = _location_signal(weather)
+    assert considered is True
+    assert signal == 1.0
+    # the buffer must actually be able to reach its documented +8% ceiling
+    assert multiplier == 1.08
 
 
 def test_run_forecast_returns_adjusted_items(sample_sales):

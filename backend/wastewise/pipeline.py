@@ -34,8 +34,9 @@ def _location_signal(weather) -> tuple[bool, float, str, float]:
             "so location was ignored."
         ), 1.0
     # A slightly larger signal means we keep the location-aware weather effect
-    # and apply a conservative buffer to reflect the stronger uncertainty.
-    buffer_multiplier = 1.0 + min(0.08, signal * 0.06)
+    # and apply a conservative buffer (up to +8% at signal=1.0) to reflect the
+    # stronger uncertainty.
+    buffer_multiplier = 1.0 + signal * 0.08
     reason = (
         f"Weather signal is material (avg temp {avg_temp:.1f}C, precip {avg_precip:.1f}mm), "
         "so location is being considered."

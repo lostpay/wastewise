@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
-    "@react-google-maps/api": "^2.20.8",
     "@vis.gl/react-google-maps": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
