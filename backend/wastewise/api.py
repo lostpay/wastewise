@@ -18,6 +18,7 @@ from wastewise.adapters.price_kroger import KrogerRetail
 from wastewise.adapters.price_historical import (
     HistoricalPriceSource, FallbackWholesale, FallbackRetail)
 from wastewise.agents.llm import LLMClient, format_status_banner
+from wastewise.agents.whatif import negotiate_order
 
 
 @asynccontextmanager
@@ -104,6 +105,11 @@ class RationaleRequest(BaseModel):
     total: float
 
 
+class WhatIfRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=500)
+    lines: list[POLine]
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -164,3 +170,8 @@ def sourcing(req: SourcingRequest, deps: dict = Depends(get_deps)):
 @app.post("/rationale")
 def rationale(req: RationaleRequest, deps: dict = Depends(get_deps)):
     return run_rationale(req.items, req.lines, req.savings, req.total, deps["llm"])
+
+
+@app.post("/whatif")
+def whatif(req: WhatIfRequest, deps: dict = Depends(get_deps)):
+    return negotiate_order(req.message, req.lines, deps["llm"])

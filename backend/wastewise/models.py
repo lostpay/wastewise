@@ -117,3 +117,10 @@ class SupplierPrice(BaseModel):
 class RationaleResponse(BaseModel):
     paragraph: str
     live: bool
+
+
+class WhatIfResponse(BaseModel):
+    lines: list[POLine]
+    total: float
+    reply: str
+    live: bool
