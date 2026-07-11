@@ -31,6 +31,16 @@ export interface ForecastAdjustedItem {
   reason: string;
   live: boolean;
   daily?: number[];
+  // Buffered recommendation before the AI adjustment. Optional: demo
+  // fixtures and old persisted sessions don't have it — fall back to forecast.
+  recommended?: number;
+}
+
+export interface AdjustmentSummary {
+  n_up: number;
+  n_down: number;
+  n_unchanged: number;
+  net_delta_pct: number;
 }
 
 export interface HistoryPoint {
@@ -44,6 +54,7 @@ export interface ForecastResponse {
   baseline_delta: number;
   waste_avoided_units?: number;
   waste_avoided_value?: number | null;
+  adjustment?: AdjustmentSummary | null;
 }
 
 export interface POLine {
