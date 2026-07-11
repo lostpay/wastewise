@@ -127,21 +127,21 @@ class _ExtremeLowLLM:
         return '{"adjusted_qty": 1, "reason": "Nobody eats this week."}'
 
 
-def test_llm_adjustment_is_clamped_to_25_percent_up():
+def test_llm_adjustment_is_clamped_to_40_percent_up():
     out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Heat", temp_c=38,
                           precipitation_mm=0)), [], _ExtremeHighLLM())
     by_item = {o.item: o for o in out}
-    # stew: recommended 115 -> ceiling 115 * 1.25 = 143.75
-    assert by_item["stew"].adjusted_qty == 143.75
+    # stew: recommended 115 -> ceiling 115 * 1.40 = 161.0
+    assert by_item["stew"].adjusted_qty == 161.0
     assert by_item["stew"].live is True
 
 
-def test_llm_adjustment_is_clamped_to_25_percent_down():
+def test_llm_adjustment_is_clamped_to_40_percent_down():
     out = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Storm", temp_c=10,
                           precipitation_mm=30)), [], _ExtremeLowLLM())
     by_item = {o.item: o for o in out}
-    # salad greens: recommended 90 -> floor 90 * 0.75 = 67.5
-    assert by_item["salad greens"].adjusted_qty == 67.5
+    # salad greens: recommended 90 -> floor 90 * 0.60 = 54.0
+    assert by_item["salad greens"].adjusted_qty == 54.0
 
 
 def test_recommended_qty_is_carried_through_on_success_and_fallback():

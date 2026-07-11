@@ -76,7 +76,7 @@ export default function ForecastPage() {
           Per-item demand for the {rangeLabel}. The base model predicts sales
           from your history and adds a spoilage-aware safety buffer (5–15% by
           shelf life); an AI agent then adjusts only when weather or holidays
-          warrant it, capped at ±25%.
+          warrant it, capped at ±40%.
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function ForecastPage() {
               <StatTile
                 label="AI weather adjustment (net)"
                 value={`${forecast.adjustment.net_delta_pct >= 0 ? "+" : ""}${forecast.adjustment.net_delta_pct.toFixed(1)}%`}
-                hint={`${forecast.adjustment.n_up} raised, ${forecast.adjustment.n_down} lowered, ${forecast.adjustment.n_unchanged} unchanged vs. the buffered recommendation. Each item is capped at ±25%.`}
+                hint={`${forecast.adjustment.n_up} raised, ${forecast.adjustment.n_down} lowered, ${forecast.adjustment.n_unchanged} unchanged vs. the buffered recommendation. Each item is capped at ±40%.`}
               />
             ) : null}
           </div>
