@@ -59,6 +59,8 @@ export default function OrderPage() {
   if (!sourcing)
     return <RedirectNotice target="Sourcing" reason="Pick suppliers before reviewing the purchase order." />;
 
+  const flaggedCount = sourcing.lines.filter((l) => l.flagged).length;
+
   function download() {
     if (!sourcing) return;
     const blob = new Blob([poToCsv(sourcing.lines, sourcing.total)], { type: "text/csv" });
@@ -191,6 +193,17 @@ export default function OrderPage() {
           />
         </div>
       </div>
+
+      {flaggedCount > 0 ? (
+        <p className="border border-amber-700/40 bg-amber-700/10 px-3 py-2 text-sm text-amber-800">
+          {flaggedCount} item{flaggedCount === 1 ? "" : "s"} flagged as priced above the US
+          retail average
+          {(sourcing.overpay ?? 0) > 0
+            ? ` (est. $${(sourcing.overpay ?? 0).toFixed(2)} over benchmark)`
+            : ""}
+          . Review before approving.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-foreground/20 pt-4">
         <Button
