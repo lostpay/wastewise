@@ -1,3 +1,4 @@
+import math
 import sys
 
 from wastewise.models import POLine, WhatIfResponse
@@ -46,6 +47,7 @@ def negotiate_order(message: str, lines: list[POLine], llm) -> WhatIfResponse:
     new_lines = []
     for l in lines:
         qty = max(0.0, updates.get(l.item.lower(), l.qty))
+        qty = float(math.ceil(qty))
         new_lines.append(l.model_copy(update={
             "qty": qty, "line_total": round(l.unit_price * qty, 2)}))
     new_total = round(sum(l.line_total for l in new_lines), 2)

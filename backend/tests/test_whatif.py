@@ -49,6 +49,23 @@ def test_unknown_items_ignored_and_negative_qty_clamped_to_zero():
     assert by_item["Rice"].line_total == 0.0
 
 
+class _FractionalLLM:
+    def complete(self, system, user):
+        return json.dumps({
+            "updates": [{"item": "rice", "qty": 24.5}],
+            "reply": "You have 20 lbs on hand, so you need 24.5 more of rice.",
+        })
+
+
+def test_fractional_qty_is_rounded_up_to_a_whole_unit():
+    resp = negotiate_order("I have 20 lbs of rice on hand", _lines(), _FractionalLLM())
+    by_item = {l.item: l for l in resp.lines}
+    assert by_item["Rice"].qty == 25                      # ceil(24.5) -> 25
+    assert by_item["Rice"].qty == int(by_item["Rice"].qty)  # whole unit, no fraction
+    assert by_item["Rice"].line_total == round(1.79 * 25, 2)
+    assert by_item["Rohu Fish"].qty == 30                  # untouched line preserved
+
+
 class _DownLLM:
     def complete(self, system, user):
         raise RuntimeError("endpoint down")
