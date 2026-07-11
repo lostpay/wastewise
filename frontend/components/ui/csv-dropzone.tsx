@@ -9,7 +9,6 @@ interface CsvDropzoneProps {
   disabled?: boolean;
 }
 
-const REQUIRED_COLUMNS = ["date", "item", "quantity"] as const;
 const MAX_BYTES = 5 * 1024 * 1024;
 const SAMPLE_CSV =
   "date,item,quantity\n2026-04-01,cabbage,20\n2026-04-01,pork,15\n2026-04-01,chicken,25\n2026-04-02,cabbage,22\n";
@@ -30,10 +29,9 @@ export async function inspectCsv(file: File): Promise<{ ok: true; columns: strin
   const text = await file.text();
   const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
   const columns = firstLine.split(",").map((c) => c.trim().toLowerCase());
-  const missing = REQUIRED_COLUMNS.filter((c) => !columns.includes(c));
-  if (missing.length) {
-    return { ok: false, error: `Missing required column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}` };
-  }
+  // Column names are no longer validated here: the backend maps arbitrary
+  // headers onto the canonical schema via LLM, so any syntactically valid
+  // CSV is allowed through. `columns`/`rows` remain informational for the preview.
   const rows = text.split(/\r?\n/).filter((l) => l.trim().length > 0).length - 1;
   return { ok: true, columns, rows: Math.max(rows, 0) };
 }
@@ -181,7 +179,7 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
               </span>
             </p>
             <p className="ww-num mt-1 text-[11px] text-muted-foreground">
-              Required columns: date, item, quantity &middot; up to 5 MB
+              Any sales CSV — AI maps your columns &middot; up to 5 MB
             </p>
           </>
         )}

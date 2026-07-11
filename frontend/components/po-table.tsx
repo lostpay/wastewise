@@ -26,7 +26,12 @@ export function POTable({
             key={l.item}
             className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}
           >
-            <td className="px-4 py-3 text-sm font-medium capitalize">{l.item}</td>
+            <td className="px-4 py-3 text-sm font-medium capitalize">
+              {l.item}
+              {l.flagged ? (
+                <span className="ww-label ml-2 text-amber-700">AI flagged</span>
+              ) : null}
+            </td>
             <td className="ww-num px-4 py-3 text-right text-sm">
               {onQtyChange ? (
                 <input
@@ -53,7 +58,9 @@ export function POTable({
               ${l.unit_price.toFixed(2)}
               {l.unit ? <span className="text-muted-foreground"> / {l.unit}</span> : null}
             </td>
-            <td className="ww-num px-4 py-3 text-right text-sm">
+            <td
+              className={`ww-num px-4 py-3 text-right text-sm ${l.flagged ? "text-amber-700" : ""}`}
+            >
               ${l.line_total.toFixed(2)}
             </td>
           </tr>

@@ -79,4 +79,26 @@ describe("Order screen", () => {
     // rather than left contradicting the recomputed table.
     expect(screen.queryByText(/dine-in traffic across the board/i)).not.toBeInTheDocument();
   });
+
+  it("does not let a rationale fetch that resolves after an edit overwrite the invalidated rationale", async () => {
+    let resolveRationale!: (value: typeof DEMO_RATIONALE) => void;
+    const pending = new Promise<typeof DEMO_RATIONALE>((resolve) => {
+      resolveRationale = resolve;
+    });
+    vi.spyOn(api, "runRationale").mockReturnValue(pending);
+    renderWithWizard(<OrderPage />, {
+      initial: { datasetId: "demo", forecast: DEMO_FORECAST, sourcing: DEMO_SOURCING },
+    });
+    // The rationale fetch is in flight (mock never resolves yet). Edit the
+    // order before it settles -- this is the invalidating action.
+    const input = screen.getByLabelText(/quantity for cabbage/i);
+    await userEvent.clear(input);
+    await userEvent.type(input, "100");
+    expect(screen.queryByText(/dine-in traffic across the board/i)).not.toBeInTheDocument();
+    // Now let the stale fetch resolve. It must be dropped, not reinstate the
+    // rationale computed against the pre-edit order.
+    resolveRationale(DEMO_RATIONALE);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(screen.queryByText(/dine-in traffic across the board/i)).not.toBeInTheDocument();
+  });
 });

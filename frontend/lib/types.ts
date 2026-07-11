@@ -31,6 +31,18 @@ export interface ForecastAdjustedItem {
   reason: string;
   live: boolean;
   daily?: number[];
+  // Buffered recommendation before the AI adjustment. Optional: demo
+  // fixtures and old persisted sessions don't have it — fall back to forecast.
+  recommended?: number;
+  spoilage_risk?: string;          // "high" | "medium" | "low" | ""
+  shelf_life_days?: number | null;
+}
+
+export interface AdjustmentSummary {
+  n_up: number;
+  n_down: number;
+  n_unchanged: number;
+  net_delta_pct: number;
 }
 
 export interface HistoryPoint {
@@ -53,6 +65,7 @@ export interface ForecastResponse {
   baseline_delta: number;
   waste_avoided_units?: number;
   waste_avoided_value?: number | null;
+  adjustment?: AdjustmentSummary | null;
   holdout_daily?: HoldoutDay[];
 }
 
@@ -68,15 +81,24 @@ export interface POLine {
   // real US benchmark (historical fallback or nothing).
   benchmark: number | null;
   unit?: string;
+  flagged?: boolean;
 }
 
 export interface SourcingResponse {
   lines: POLine[];
   total: number;
   savings: number;
+  overpay?: number;
 }
 
 export interface RationaleResponse {
   paragraph: string;
+  live: boolean;
+}
+
+export interface WhatIfResponse {
+  lines: POLine[];
+  total: number;
+  reply: string;
   live: boolean;
 }

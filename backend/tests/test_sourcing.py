@@ -178,3 +178,76 @@ def test_po_line_carries_offer_unit():
     resp = source_order([{"item": "cabbage", "qty": 3}],
                         _Wholesale(), _Retail(), _BadLLM(), "40.7,-74.0")
     assert resp.lines[0].unit == "1 lb"
+
+
+def test_overpriced_pick_is_flagged_and_overpay_totalled():
+    # _SelectingLLM picks index 1 at 4.5; benchmark 2.0 -> 4.5 > 1.25 * 2.0,
+    # so the deterministic guard flags it even though the LLM said nothing.
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetail(), _SelectingLLM(), "loc")
+    assert resp.lines[0].flagged is True
+    assert resp.overpay == 5.0  # (4.5 - 2.0) * 2
+
+
+class _CautionLLM:
+    def complete(self, system, user):
+        return json.dumps({"index": 1, "reason": "All candidates run well above the US average.",
+                           "verdict": "caution"})
+
+
+def test_llm_caution_verdict_flags_the_line():
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetail(), _CautionLLM(), "loc")
+    assert resp.lines[0].flagged is True
+    assert resp.lines[0].note == "All candidates run well above the US average."
+
+
+class _MultiRetailUnderThreshold:
+    """Provides candidates where the selected one is below the deterministic
+    guard threshold (FLAG_FRAC * benchmark = 1.25 * 2.0 = 2.5) to isolate
+    the LLM caution verdict's flagging behavior."""
+    def get_retail_prices(self, item, location):
+        return [
+            SupplierPrice(supplier="Kroger", unit_price=3.0,
+                         description="Premium Cut Chicken Thighs"),
+            SupplierPrice(supplier="Kroger", unit_price=2.2,
+                         description="Regular Chicken Thighs"),
+        ]
+
+
+class _CautionLLMUnderThreshold:
+    """Returns caution verdict on the under-threshold candidate (2.2 < 2.5)."""
+    def complete(self, system, user):
+        return json.dumps({"index": 1, "reason": "Quality is poor for the price.",
+                           "verdict": "caution"})
+
+
+def test_llm_caution_verdict_flags_even_under_deterministic_threshold():
+    # _Wholesale benchmark is 2.0, guard threshold is 1.25 * 2.0 = 2.5.
+    # The selected candidate is 2.2, which is under the threshold and would
+    # NOT be flagged by the deterministic guard alone. Only the LLM's caution
+    # verdict should cause the flag. This test isolates the caution branch.
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetailUnderThreshold(),
+                        _CautionLLMUnderThreshold(), "loc")
+    line = resp.lines[0]
+    assert line.unit_price == 2.2
+    assert line.flagged is True  # Flag comes from caution verdict, not guard
+    assert line.note == "Quality is poor for the price."
+    assert line.live is True
+
+
+def test_cheap_pick_is_not_flagged_and_overpay_zero():
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _Wholesale(), _Retail(), _FakeLLM(), "loc")
+    assert resp.lines[0].flagged is False
+    assert resp.overpay == 0.0
+
+
+def test_historical_benchmark_does_not_drive_the_price_guard():
+    # Historical items get real_benchmark None -> guard can't fire on them.
+    resp = source_order([{"item": "cabbage", "qty": 10}],
+                        _Wholesale(), _Retail(), _FakeLLM(), "loc",
+                        historical_items={"cabbage"})
+    assert resp.lines[0].flagged is False
+    assert resp.overpay == 0.0

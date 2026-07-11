@@ -78,6 +78,20 @@ def test_forecast_items_include_daily_series(sample_sales):
         assert all(d >= 0 for d in it.daily)
 
 
+def test_buffer_fracs_override_flat_safety_buffer():
+    import datetime
+    from wastewise.models import SalesRecord
+    from wastewise.forecasting.forecaster import forecast_items
+    records = [SalesRecord(date=datetime.date(2026, 1, 1) + datetime.timedelta(days=i),
+                           item="rice", quantity=10 + (i % 3))
+               for i in range(60)]
+    items, _ = forecast_items(records, 7, buffer_fracs={"rice": 0.05})
+    it = items[0]
+    assert abs(it.safety_buffer - 0.05 * it.forecast) < 0.05
+    # forecast/buffer are rounded independently, so allow a cent of drift.
+    assert abs(it.recommended_purchase_qty - (it.forecast + it.safety_buffer)) < 0.05
+
+
 def test_backtest_exposes_holdout_daily_series(sample_sales):
     # Frontend needs a per-day array (aggregated across items) to draw
     # the "backtest replay" chart under the stat tiles.

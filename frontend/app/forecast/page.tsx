@@ -74,8 +74,9 @@ export default function ForecastPage() {
         <div className="ww-rule mt-3 w-full text-foreground/40" />
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Per-item demand for the {rangeLabel}. The base model predicts sales
-          from your history; an LLM then nudges each quantity up or down for
-          weather and public holidays.
+          from your history and adds a spoilage-aware safety buffer (5–15% by
+          shelf life); an AI agent then adjusts only when weather or holidays
+          warrant it, capped at ±25%.
         </p>
       </div>
 
@@ -87,12 +88,12 @@ export default function ForecastPage() {
         <Skeleton className="h-80 w-full" />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <StatTile
-              label="Forecast accuracy"
+              label="Base-model accuracy gain vs. simple seasonal baseline"
               value={`${Math.round(forecast.baseline_delta * 100)}%`}
               kicker="more accurate than a rule-of-thumb forecast"
-              hint="On your last 7 days of sales, our model was closer to what actually sold than a simple 'same day last week' guess."
+              hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Measured on the base model, before the AI weather adjustment. Higher is better."
             />
             {(forecast.waste_avoided_units ?? 0) > 0 ? (
               <StatTile
@@ -108,7 +109,14 @@ export default function ForecastPage() {
                     ? "money you didn't waste on over-ordering"
                     : "units you didn't waste on over-ordering"
                 }
-                hint="Compared to that same simple guess, our model would have bought less food that wouldn't sell — over the same 7 days."
+                hint="Same 7-day holdout: what a naive same-weekday ordering policy would have over-bought, minus this model's over-buy — both with the same 15% buffer (the backtest compares policies, not the spoilage-aware buffers)."
+              />
+            ) : null}
+            {forecast.adjustment ? (
+              <StatTile
+                label="AI weather adjustment (net)"
+                value={`${forecast.adjustment.net_delta_pct >= 0 ? "+" : ""}${forecast.adjustment.net_delta_pct.toFixed(1)}%`}
+                hint={`${forecast.adjustment.n_up} raised, ${forecast.adjustment.n_down} lowered, ${forecast.adjustment.n_unchanged} unchanged vs. the buffered recommendation. Each item is capped at ±25%.`}
               />
             ) : null}
           </div>
@@ -175,15 +183,17 @@ export default function ForecastPage() {
                   <tr className="border-b-2 border-foreground/60 bg-muted">
                     <th className="ww-label px-4 py-2 text-left">Item</th>
                     <th className="ww-label px-4 py-2 text-right">Model</th>
-                    <th className="ww-label px-4 py-2 text-right">Rec.</th>
+                    <th className="ww-label px-4 py-2 text-right">+ Buffer</th>
+                    <th className="ww-label px-4 py-2 text-right">AI adj.</th>
                     <th className="ww-label px-4 py-2 text-right">Δ</th>
                     <th className="ww-label hidden px-4 py-2 text-right sm:table-cell">Note</th>
                   </tr>
                 </thead>
                 <tbody>
                   {forecast.items.map((it, idx) => {
-                    const delta = it.adjusted_qty - it.forecast;
-                    const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
+                    const rec = it.recommended ?? it.forecast;
+                    const delta = it.adjusted_qty - rec;
+                    const deltaPct = rec ? (delta / rec) * 100 : 0;
                     const sign = delta > 0 ? "+" : "";
                     // Down = saved-from-waste (green). Up = justified extra
                     // spend (amber). Zero = muted. Deliberately not "up=good"
@@ -198,9 +208,22 @@ export default function ForecastPage() {
                     return (
                       <Fragment key={it.item}>
                         <tr className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}>
-                          <td className="px-4 py-3 text-sm font-medium capitalize">{it.item}</td>
+                          <td className="px-4 py-3 text-sm font-medium capitalize">
+                            {it.item}
+                            {it.spoilage_risk === "high" ? (
+                              <span className="ww-label ml-2 text-amber-700">high spoilage</span>
+                            ) : null}
+                            {it.shelf_life_days != null ? (
+                              <span className="ww-num block text-[10px] font-normal normal-case text-muted-foreground">
+                                ~{it.shelf_life_days}-day shelf life
+                              </span>
+                            ) : null}
+                          </td>
                           <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
                             {it.forecast.toFixed(1)}
+                          </td>
+                          <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
+                            {rec.toFixed(1)}
                           </td>
                           <td className="ww-num px-4 py-3 text-right text-sm font-semibold">
                             {it.adjusted_qty.toFixed(1)}
@@ -218,7 +241,7 @@ export default function ForecastPage() {
                           </td>
                         </tr>
                         <tr className="sm:hidden">
-                          <td colSpan={4} className="px-4 pb-3">
+                          <td colSpan={5} className="px-4 pb-3">
                             <ReasonBadge reason={it.reason} live={it.live} />
                           </td>
                         </tr>

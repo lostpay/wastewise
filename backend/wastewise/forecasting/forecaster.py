@@ -44,6 +44,7 @@ def _future_rows(df_item: pd.DataFrame, horizon_days: int,
 def forecast_items(records: list[SalesRecord], horizon_days: int,
                    safety_frac: float = 0.15,
                    holiday_dates: frozenset = frozenset(),
+                   buffer_fracs: dict[str, float] | None = None,
                    currency: str = "USD") -> tuple[list[ForecastItem], BacktestStats]:
     df = build_frame(records, holiday_dates)
     model = _train(df)
@@ -54,7 +55,8 @@ def forecast_items(records: list[SalesRecord], horizon_days: int,
         daily = [round(float(max(p, 0.0)), 2) for p in preds]
         pred = float(np.clip(preds.sum(), 0, None))
         base = baseline_forecast(records, item, horizon_days)
-        buffer = safety_frac * pred
+        frac = (buffer_fracs or {}).get(item, safety_frac)
+        buffer = frac * pred
         items.append(ForecastItem(item=item, forecast=round(pred, 2),
                                   baseline=round(base, 2),
                                   safety_buffer=round(buffer, 2),
