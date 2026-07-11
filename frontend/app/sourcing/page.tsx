@@ -35,6 +35,12 @@ export default function SourcingPage() {
       .finally(() => setLoading(false));
   }, [hydrated, forecast, location, sourcing, router, set, datasetId, currency]);
 
+  // Reset the latch when inputs change -- so clearing `sourcing` (e.g. after
+  // a new horizon on setup) actually re-runs instead of being ignored.
+  useEffect(() => {
+    started.current = false;
+  }, [forecast, location, datasetId, currency]);
+
   if (hydrated && !forecast)
     return <RedirectNotice target="Forecast" reason="Run a forecast before sourcing suppliers." />;
 

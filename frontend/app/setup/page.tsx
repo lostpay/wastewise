@@ -153,15 +153,41 @@ export default function SetupPage() {
 
       <div className="space-y-2">
         <p className="ww-label">1.4 &mdash; Forecast horizon</p>
-        <HorizonCalendar
-          start={startISO}
-          days={horizonDays}
-          onChange={(d) => set({ horizonDays: d })}
-        />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Forecasts start the day after your data ends. Pick an end date up to 14
-          days out &mdash; beyond that, weather forecasts aren&rsquo;t available.
-        </p>
+        {file ? (
+          <>
+            <HorizonCalendar
+              start={startISO}
+              days={horizonDays}
+              onChange={(d) =>
+                // Changing the horizon invalidates every downstream result
+                // (forecast, sourcing, rationale all depend on it). Clear
+                // them so the wizard actually re-runs with the new range
+                // instead of showing the previous horizon's numbers.
+                set({
+                  horizonDays: d,
+                  forecast: null,
+                  sourcing: null,
+                  rationale: null,
+                })
+              }
+            />
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Forecasts start the day after your data ends. Pick an end date up
+              to 14 days out &mdash; beyond that, weather forecasts aren&rsquo;t
+              available.
+            </p>
+          </>
+        ) : (
+          <div className="border border-dashed border-foreground/25 bg-card px-4 py-8 text-center">
+            <p className="ww-label mb-2 text-muted-foreground">
+              Awaiting sales history
+            </p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Upload a CSV above &mdash; the calendar will anchor to the day
+              after your data ends.
+            </p>
+          </div>
+        )}
       </div>
 
       {error && (

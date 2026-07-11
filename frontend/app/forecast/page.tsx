@@ -36,6 +36,13 @@ export default function ForecastPage() {
       .finally(() => setLoading(false));
   }, [hydrated, datasetId, horizonDays, location, forecast, router, set]);
 
+  // Reset the "already started" latch whenever the inputs to the forecast
+  // change -- so clearing `forecast` from setup (e.g. after picking a new
+  // horizon) actually re-runs the fetch instead of being ignored.
+  useEffect(() => {
+    started.current = false;
+  }, [datasetId, horizonDays, location]);
+
   if (hydrated && !datasetId)
     return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
 
