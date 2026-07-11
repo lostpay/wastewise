@@ -28,7 +28,7 @@ export default function SourcingPage() {
     started.current = true;
     setLoading(true);
     setError(null);
-    const items = forecast.items.map((it) => ({ item: it.item, qty: it.adjusted_qty }));
+    const items = forecast.items.map((it) => ({ item: it.item, qty: Math.ceil(it.adjusted_qty) }));
     runSourcing(items, location, datasetId, currency)
       .then((res) => set({ sourcing: res }))
       .catch((e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Please try again."))
@@ -67,11 +67,20 @@ export default function SourcingPage() {
         <Skeleton className="h-64 w-full" />
       ) : (
         <>
-          <StatTile
-            label="Estimated savings vs. US retail average"
-            value={`$${sourcing.savings.toFixed(2)}`}
-            hint="Sum of (BLS benchmark − Kroger price) × qty for items where Kroger beats the benchmark. Items without a real US benchmark (e.g. Paneer, Mutton) are shown but not counted here."
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <StatTile
+              label="Estimated savings vs. US retail average"
+              value={`$${sourcing.savings.toFixed(2)}`}
+              hint="Sum of (BLS benchmark − Kroger price) × qty for items where Kroger beats the benchmark. Items without a real US benchmark (e.g. Paneer, Mutton) are shown but not counted here."
+            />
+            {(sourcing.overpay ?? 0) > 0 ? (
+              <StatTile
+                label="AI-flagged overpayment vs. US retail average"
+                value={`$${(sourcing.overpay ?? 0).toFixed(2)}`}
+                hint="Sum of (Kroger price − BLS benchmark) × qty for items priced above the benchmark. The AI recommends trimming or substituting flagged lines rather than buying at these prices."
+              />
+            ) : null}
+          </div>
           <div>
             <p className="ww-label mb-2">Tbl. 2 — Supplier price detail</p>
             <div className="border border-foreground/20 bg-card">

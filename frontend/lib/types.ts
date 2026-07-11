@@ -69,12 +69,14 @@ export interface POLine {
   // real US benchmark (historical fallback or nothing).
   benchmark: number | null;
   unit?: string;
+  flagged?: boolean;
 }
 
 export interface SourcingResponse {
   lines: POLine[];
   total: number;
   savings: number;
+  overpay?: number;
 }
 
 export interface RationaleResponse {
