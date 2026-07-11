@@ -169,7 +169,11 @@ export default function OrderPage() {
       <div>
         <p className="ww-label mb-2">Tbl. 3 — Purchase order draft</p>
         <div className="border border-foreground/20 bg-card">
-          <POTable lines={sourcing.lines} total={sourcing.total} onQtyChange={updateQty} />
+          <POTable
+            lines={sourcing.lines}
+            total={sourcing.total}
+            onQtyChange={whatIfLoading ? undefined : updateQty}
+          />
         </div>
       </div>
 
