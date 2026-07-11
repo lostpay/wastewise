@@ -78,4 +78,20 @@ describe("api client", () => {
     expect(body.horizon_days).toBe(10);
     expect(body.dataset_id).toBe("ds1");
   });
+
+  it("sends currency in the forecast request body", async () => {
+    const spy = vi.fn().mockResolvedValue(jsonResponse({ items: [], baseline_delta: 0 }));
+    vi.stubGlobal("fetch", spy);
+    await runForecast("ds1", 10, "40.7,-74.0", "INR");
+    const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.currency).toBe("INR");
+  });
+
+  it("defaults forecast currency to USD when omitted", async () => {
+    const spy = vi.fn().mockResolvedValue(jsonResponse({ items: [], baseline_delta: 0 }));
+    vi.stubGlobal("fetch", spy);
+    await runForecast("ds1", 10, "40.7,-74.0");
+    const body = JSON.parse((spy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.currency).toBe("USD");
+  });
 });

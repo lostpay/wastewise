@@ -6,7 +6,8 @@ from wastewise.agents.sourcing import source_order
 from wastewise.agents.rationale import write_rationale
 
 def run_forecast(records: list[SalesRecord], horizon_days: int, location: str,
-                 weather_src, holiday_src, llm) -> ForecastResponse:
+                 weather_src, holiday_src, llm,
+                 currency: str = "USD") -> ForecastResponse:
     first_hist = min(r.date for r in records)
     last_day = max(r.date for r in records)
     first_future = last_day + datetime.timedelta(days=1)
@@ -15,7 +16,9 @@ def run_forecast(records: list[SalesRecord], horizon_days: int, location: str,
     # spikes, not just flag the upcoming ones.
     holidays = holiday_src.get_holidays(first_hist, horizon_end)
     holiday_dates = frozenset(h.date for h in holidays)
-    items, stats = forecast_items(records, horizon_days, holiday_dates=holiday_dates)
+    items, stats = forecast_items(records, horizon_days,
+                                  holiday_dates=holiday_dates,
+                                  currency=currency)
     weather = [(first_future + datetime.timedelta(days=i),
                 weather_src.get_weather(first_future + datetime.timedelta(days=i), location))
                for i in range(horizon_days)]

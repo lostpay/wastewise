@@ -50,6 +50,27 @@ def test_waste_avoided_value_present_when_prices_exist(sample_sales):
     assert stats.waste_avoided_value >= 0.0
 
 
+def test_waste_avoided_value_converts_non_usd_currencies_to_usd(sample_sales):
+    # ₹600/kg × 0.012 = $7.20/kg. The USD value should be roughly (0.012 x) the
+    # raw-value figure -- proves conversion is happening at ingest, not that a
+    # ₹ number is being silently treated as $.
+    priced = [r.model_copy(update={"price": 600.0}) for r in sample_sales]
+    _, usd_stats = forecast_items(priced, horizon_days=7, currency="USD")
+    _, inr_stats = forecast_items(priced, horizon_days=7, currency="INR")
+    assert usd_stats.waste_avoided_value is not None
+    assert inr_stats.waste_avoided_value is not None
+    # INR-converted should be ~0.012x USD-interpreted. Use a wide bound so
+    # noise in the backtest doesn't flake the test.
+    assert inr_stats.waste_avoided_value < usd_stats.waste_avoided_value * 0.02
+
+
+def test_currency_defaults_to_usd_for_backwards_compat(sample_sales):
+    priced = [r.model_copy(update={"price": 2.0}) for r in sample_sales]
+    _, default_stats = forecast_items(priced, horizon_days=7)
+    _, explicit_stats = forecast_items(priced, horizon_days=7, currency="USD")
+    assert default_stats.waste_avoided_value == explicit_stats.waste_avoided_value
+
+
 def test_forecast_items_include_daily_series(sample_sales):
     items, _ = forecast_items(sample_sales, horizon_days=7)
     for it in items:
