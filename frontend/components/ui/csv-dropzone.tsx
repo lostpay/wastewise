@@ -181,7 +181,7 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
               </span>
             </p>
             <p className="ww-num mt-1 text-[11px] text-muted-foreground">
-              Required columns: date, item, quantity &middot; up to 5 MB
+              Any sales CSV — AI maps your columns &middot; up to 5 MB
             </p>
           </>
         )}

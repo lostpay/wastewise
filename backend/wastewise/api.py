@@ -122,7 +122,7 @@ async def upload(file: UploadFile = File(...), deps: dict = Depends(get_deps)):
     except UnicodeDecodeError:
         raise HTTPException(status_code=400, detail="file must be UTF-8 encoded CSV")
     try:
-        records = parse_sales_csv(text)
+        records = parse_sales_csv(text, llm=deps["llm"])
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     ds_id = deps["store"].save(records)
