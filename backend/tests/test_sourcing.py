@@ -202,6 +202,41 @@ def test_llm_caution_verdict_flags_the_line():
     assert resp.lines[0].note == "All candidates run well above the US average."
 
 
+class _MultiRetailUnderThreshold:
+    """Provides candidates where the selected one is below the deterministic
+    guard threshold (FLAG_FRAC * benchmark = 1.25 * 2.0 = 2.5) to isolate
+    the LLM caution verdict's flagging behavior."""
+    def get_retail_prices(self, item, location):
+        return [
+            SupplierPrice(supplier="Kroger", unit_price=3.0,
+                         description="Premium Cut Chicken Thighs"),
+            SupplierPrice(supplier="Kroger", unit_price=2.2,
+                         description="Regular Chicken Thighs"),
+        ]
+
+
+class _CautionLLMUnderThreshold:
+    """Returns caution verdict on the under-threshold candidate (2.2 < 2.5)."""
+    def complete(self, system, user):
+        return json.dumps({"index": 1, "reason": "Quality is poor for the price.",
+                           "verdict": "caution"})
+
+
+def test_llm_caution_verdict_flags_even_under_deterministic_threshold():
+    # _Wholesale benchmark is 2.0, guard threshold is 1.25 * 2.0 = 2.5.
+    # The selected candidate is 2.2, which is under the threshold and would
+    # NOT be flagged by the deterministic guard alone. Only the LLM's caution
+    # verdict should cause the flag. This test isolates the caution branch.
+    resp = source_order([{"item": "chicken", "qty": 2}],
+                        _Wholesale(), _MultiRetailUnderThreshold(),
+                        _CautionLLMUnderThreshold(), "loc")
+    line = resp.lines[0]
+    assert line.unit_price == 2.2
+    assert line.flagged is True  # Flag comes from caution verdict, not guard
+    assert line.note == "Quality is poor for the price."
+    assert line.live is True
+
+
 def test_cheap_pick_is_not_flagged_and_overpay_zero():
     resp = source_order([{"item": "cabbage", "qty": 10}],
                         _Wholesale(), _Retail(), _FakeLLM(), "loc")
