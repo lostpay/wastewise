@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { DatasetSummary, ForecastResponse, SourcingResponse, RationaleResponse, Currency, HistoryPoint } from "./types";
 
 const KEY = "ww_state";
@@ -56,12 +56,17 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true);
   }, []);
 
-  const set = (partial: Partial<WizardState>) =>
+  // Stable across renders so consumer effects that (correctly) list `set`
+  // in their dependency arrays don't re-fire on every WizardProvider
+  // re-render -- which happens on every wizard state change and would
+  // otherwise compound with React 18 StrictMode double-invoke.
+  const set = useCallback((partial: Partial<WizardState>) => {
     setState((prev) => {
       const next = { ...prev, ...partial };
       if (typeof window !== "undefined") window.sessionStorage.setItem(KEY, JSON.stringify(next));
       return next;
     });
+  }, []);
 
   return <WizardContext.Provider value={{ ...state, hydrated, set }}>{children}</WizardContext.Provider>;
 }

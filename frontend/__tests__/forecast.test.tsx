@@ -1,5 +1,7 @@
+import { StrictMode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { WizardProvider } from "@/lib/store";
 import { renderWithWizard } from "./test-utils";
 
 const push = vi.fn();
@@ -56,7 +58,30 @@ describe("Forecast screen", () => {
     vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
     renderWithWizard(<ForecastPage />, { initial: { datasetId: "demo" } });
     expect(await screen.findByText(/\$61\.50/)).toBeInTheDocument();
-    expect(screen.getByText(/over-ordering avoided/i)).toBeInTheDocument();
+    // Both the tile label and the methodology disclosure mention "Waste
+    // avoided"; either is enough to prove the tile rendered.
+    expect(screen.getAllByText(/waste avoided/i).length).toBeGreaterThan(0);
+  });
+
+  it("does not double-fire runForecast under React 18 StrictMode dev double-invoke", async () => {
+    // Regression guard for the "latch reset" fix: an unconditional reset
+    // effect would flip `started.current` back to false between StrictMode's
+    // two mounts, causing runForecast to be called twice per page load.
+    window.sessionStorage.setItem("ww_state", JSON.stringify({ datasetId: "demo" }));
+    // Fresh spy so counts don't include prior tests' fires.
+    vi.restoreAllMocks();
+    const spy = vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
+    render(
+      <StrictMode>
+        <WizardProvider>
+          <ForecastPage />
+        </WizardProvider>
+      </StrictMode>,
+    );
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+    // Give any lingering StrictMode remount + effect a chance to fire again.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it("renders the history-vs-forecast chart when history is present", async () => {

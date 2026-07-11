@@ -64,8 +64,17 @@ export function uploadCsv(file: File): Promise<UploadResponse> {
   return call("/upload", { method: "POST", body: form }, DEMO_UPLOAD);
 }
 
-export function runForecast(datasetId: string, horizonDays: number, location: string): Promise<ForecastResponse> {
-  return call("/forecast", jsonInit({ dataset_id: datasetId, horizon_days: horizonDays, location }), DEMO_FORECAST);
+export function runForecast(
+  datasetId: string,
+  horizonDays: number,
+  location: string,
+  currency: Currency = "USD",
+): Promise<ForecastResponse> {
+  return call(
+    "/forecast",
+    jsonInit({ dataset_id: datasetId, horizon_days: horizonDays, location, currency }),
+    DEMO_FORECAST,
+  );
 }
 
 export function runSourcing(

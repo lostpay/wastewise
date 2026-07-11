@@ -51,12 +51,22 @@ export interface HistoryPoint {
   quantity: number;
 }
 
+export interface HoldoutDay {
+  date: string;
+  actual: number;
+  model: number;
+  baseline: number;
+  waste_model_value?: number | null;
+  waste_baseline_value?: number | null;
+}
+
 export interface ForecastResponse {
   items: ForecastAdjustedItem[];
   baseline_delta: number;
   waste_avoided_units?: number;
   waste_avoided_value?: number | null;
   adjustment?: AdjustmentSummary | null;
+  holdout_daily?: HoldoutDay[];
 }
 
 export interface POLine {

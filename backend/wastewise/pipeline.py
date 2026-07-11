@@ -7,7 +7,8 @@ from wastewise.agents.rationale import write_rationale
 from wastewise.agents.spoilage import assess_spoilage, BUFFER_BY_RISK
 
 def run_forecast(records: list[SalesRecord], horizon_days: int, location: str,
-                 weather_src, holiday_src, llm) -> ForecastResponse:
+                 weather_src, holiday_src, llm,
+                 currency: str = "USD") -> ForecastResponse:
     first_hist = min(r.date for r in records)
     last_day = max(r.date for r in records)
     first_future = last_day + datetime.timedelta(days=1)
@@ -20,7 +21,7 @@ def run_forecast(records: list[SalesRecord], horizon_days: int, location: str,
     spoilage = assess_spoilage(item_names, llm)
     buffer_fracs = {n: BUFFER_BY_RISK[s.risk] for n, s in spoilage.items()}
     items, stats = forecast_items(records, horizon_days, holiday_dates=holiday_dates,
-                                  buffer_fracs=buffer_fracs)
+                                  buffer_fracs=buffer_fracs, currency=currency)
     weather = [(first_future + datetime.timedelta(days=i),
                 weather_src.get_weather(first_future + datetime.timedelta(days=i), location))
                for i in range(horizon_days)]
@@ -34,7 +35,8 @@ def run_forecast(records: list[SalesRecord], horizon_days: int, location: str,
     return ForecastResponse(items=adjusted, baseline_delta=stats.delta,
                             waste_avoided_units=stats.waste_avoided_units,
                             waste_avoided_value=stats.waste_avoided_value,
-                            adjustment=summarize_adjustments(adjusted))
+                            adjustment=summarize_adjustments(adjusted),
+                            holdout_daily=stats.holdout_daily)
 
 
 def run_sourcing(items: list[dict], location: str, wholesale_src, retail_src,

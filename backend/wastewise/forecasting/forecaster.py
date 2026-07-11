@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 from xgboost import XGBRegressor
-from wastewise.models import SalesRecord, ForecastItem, BacktestStats
+from wastewise.currency import to_usd
+from wastewise.models import SalesRecord, ForecastItem, BacktestStats, HoldoutDay
 from wastewise.forecasting.features import build_frame
 from wastewise.forecasting.baseline import baseline_forecast
 
@@ -44,7 +45,7 @@ def forecast_items(records: list[SalesRecord], horizon_days: int,
                    safety_frac: float = 0.15,
                    holiday_dates: frozenset = frozenset(),
                    buffer_fracs: dict[str, float] | None = None,
-                   ) -> tuple[list[ForecastItem], BacktestStats]:
+                   currency: str = "USD") -> tuple[list[ForecastItem], BacktestStats]:
     df = build_frame(records, holiday_dates)
     model = _train(df)
     items: list[ForecastItem] = []
@@ -61,20 +62,23 @@ def forecast_items(records: list[SalesRecord], horizon_days: int,
                                   safety_buffer=round(buffer, 2),
                                   recommended_purchase_qty=round(pred + buffer, 2),
                                   daily=daily))
-    stats = _backtest(records, df, safety_frac)
+    stats = _backtest(records, df, safety_frac, currency)
     return items, stats
 
 
-def _mean_prices(records: list[SalesRecord]) -> dict[str, float]:
+def _mean_prices(records: list[SalesRecord], currency: str = "USD") -> dict[str, float]:
+    # Convert once at ingest so downstream $-denominated aggregates
+    # (waste_avoided_value) don't silently mix currencies.
     by_item: dict[str, list[float]] = {}
     for r in records:
-        if r.price is not None:
-            by_item.setdefault(r.item, []).append(r.price)
+        usd = to_usd(r.price, currency)
+        if usd is not None:
+            by_item.setdefault(r.item, []).append(usd)
     return {item: float(np.mean(v)) for item, v in by_item.items()}
 
 
 def _backtest(records: list[SalesRecord], df: pd.DataFrame,
-              safety_frac: float) -> BacktestStats:
+              safety_frac: float, currency: str = "USD") -> BacktestStats:
     """MAE improvement plus over-ordering avoided (model vs baseline policy,
     both buffered) over a 7-day holdout."""
     cutoff = df["date"].max() - pd.Timedelta(days=7)
@@ -83,28 +87,57 @@ def _backtest(records: list[SalesRecord], df: pd.DataFrame,
     if len(train_df.dropna(subset=FEATURES)) < 20 or test_df.empty:
         return BacktestStats(delta=0.0, waste_avoided_units=0.0, waste_avoided_value=None)
     model = _train(train_df)
-    prices = _mean_prices(records)
+    prices = _mean_prices(records, currency)
     model_err, base_err = [], []
     over_model = over_base = 0.0
     value_model = value_base = 0.0
     any_priced = False
+    # Per-day aggregates for the frontend "backtest replay" chart. Summed
+    # across items so a single day is one point on the chart, not one per SKU.
+    daily: dict[str, dict[str, float]] = {}
     for _, row in test_df.iterrows():
         yhat = float(model.predict(row[FEATURES].to_frame().T.astype(float))[0])
         actual = row["quantity"]
+        baseline = float(row["lag7"])
         model_err.append(abs(yhat - actual))
-        base_err.append(abs(row["lag7"] - actual))
+        base_err.append(abs(baseline - actual))
         om = max(0.0, yhat * (1 + safety_frac) - actual)
-        ob = max(0.0, row["lag7"] * (1 + safety_frac) - actual)
+        ob = max(0.0, baseline * (1 + safety_frac) - actual)
         over_model += om
         over_base += ob
         price = prices.get(row["item"])
+        vm = vb = 0.0
         if price is not None:
             any_priced = True
-            value_model += om * price
-            value_base += ob * price
+            vm = om * price
+            vb = ob * price
+            value_model += vm
+            value_base += vb
+        # `date` is a pandas Timestamp; ISO-format for JSON serialization.
+        d_key = row["date"].date().isoformat()
+        bucket = daily.setdefault(d_key, {"actual": 0.0, "model": 0.0,
+                                          "baseline": 0.0, "vm": 0.0,
+                                          "vb": 0.0})
+        bucket["actual"] += float(actual)
+        bucket["model"] += yhat
+        bucket["baseline"] += baseline
+        bucket["vm"] += vm
+        bucket["vb"] += vb
     m, b = float(np.mean(model_err)), float(np.mean(base_err))
     delta = 0.0 if b == 0 else float(np.clip((b - m) / b, 0.0, 1.0))
     units = round(max(0.0, over_base - over_model), 2)
     value = round(max(0.0, value_base - value_model), 2) if any_priced else None
+    holdout_daily = [
+        HoldoutDay(
+            date=d,
+            actual=round(v["actual"], 2),
+            model=round(max(v["model"], 0.0), 2),
+            baseline=round(max(v["baseline"], 0.0), 2),
+            waste_model_value=round(v["vm"], 2) if any_priced else None,
+            waste_baseline_value=round(v["vb"], 2) if any_priced else None,
+        )
+        for d, v in sorted(daily.items())
+    ]
     return BacktestStats(delta=delta, waste_avoided_units=units,
-                         waste_avoided_value=value)
+                         waste_avoided_value=value,
+                         holdout_daily=holdout_daily)

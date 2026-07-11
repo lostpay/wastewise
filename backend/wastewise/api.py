@@ -81,6 +81,11 @@ class ForecastRequest(_LocatedRequest):
     # dataset's last date. Capped at 14: beyond ~16 days the weather source
     # (Open-Meteo) stops returning real forecasts and adjustments go neutral.
     horizon_days: int = Field(default=7, ge=1, le=14)
+    # ISO-4217 code for the CSV's `price` column. Converts to USD before
+    # computing waste_avoided_value so restaurants abroad don't see their
+    # rupee/euro/yen prices printed with a "$" sign. Same field as
+    # SourcingRequest; unknown codes pass through as-is.
+    currency: str = "USD"
 
 
 class SourcingItem(BaseModel):
@@ -136,7 +141,8 @@ def forecast(req: ForecastRequest, deps: dict = Depends(get_deps)):
     except KeyError:
         raise HTTPException(status_code=404, detail="dataset not found")
     return run_forecast(records, req.horizon_days, req.location,
-                        deps["weather"], deps["holidays"], deps["llm"])
+                        deps["weather"], deps["holidays"], deps["llm"],
+                        currency=req.currency)
 
 
 @app.post("/sourcing")
