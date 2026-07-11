@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     llm_base_url: str = "https://api.fireworks.ai/inference/v1"
     llm_api_key: str = "changeme"
-    llm_model: str = "accounts/fireworks/models/llama-v3p1-8b-instruct"
+    llm_model: str = "accounts/fireworks/models/gpt-oss-120b"
     fred_api_key: str = "changeme"
     kroger_client_id: str = "changeme"
     kroger_client_secret: str = "changeme"

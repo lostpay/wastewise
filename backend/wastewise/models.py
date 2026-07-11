@@ -33,6 +33,13 @@ class AdjustedItem(BaseModel):
     reason: str
     live: bool
     daily: list[float] = []
+    # Pre-LLM buffered recommendation (forecast + safety buffer). Lets the UI
+    # show the AI's true delta instead of blaming the buffer on the AI.
+    recommended: float = 0.0
+    # Only set when the spoilage lookup for this item was live -- the UI must
+    # never render a fabricated shelf life from the conservative fallback.
+    spoilage_risk: str = ""
+    shelf_life_days: int | None = None
 
 
 class BacktestStats(BaseModel):
@@ -41,11 +48,19 @@ class BacktestStats(BaseModel):
     waste_avoided_value: float | None
 
 
+class AdjustmentSummary(BaseModel):
+    n_up: int
+    n_down: int
+    n_unchanged: int
+    net_delta_pct: float
+
+
 class ForecastResponse(BaseModel):
     items: list[AdjustedItem]
     baseline_delta: float
     waste_avoided_units: float = 0.0
     waste_avoided_value: float | None = None
+    adjustment: AdjustmentSummary | None = None
 
 
 class POLine(BaseModel):
@@ -61,18 +76,30 @@ class POLine(BaseModel):
     # `savings` at the response level only counts rows where this is not None.
     benchmark: float | None = None
     unit: str = ""
+    # True when the AI (or the deterministic price guard) says this price is
+    # bad enough that the buyer should trim, substitute, or shop elsewhere.
+    flagged: bool = False
 
 
 class SourcingResponse(BaseModel):
     lines: list[POLine]
     total: float
     savings: float
+    # Sum of (unit_price - US benchmark) * qty over lines priced above their
+    # real benchmark -- the honest counterweight to `savings`.
+    overpay: float = 0.0
 
 
 class WeatherInfo(BaseModel):
     condition: str
     temp_c: float
     precipitation_mm: float
+
+
+class SpoilageInfo(BaseModel):
+    risk: str                       # "high" | "medium" | "low"
+    shelf_life_days: int | None
+    live: bool
 
 
 class Holiday(BaseModel):
@@ -89,4 +116,11 @@ class SupplierPrice(BaseModel):
 
 class RationaleResponse(BaseModel):
     paragraph: str
+    live: bool
+
+
+class WhatIfResponse(BaseModel):
+    lines: list[POLine]
+    total: float
+    reply: str
     live: bool

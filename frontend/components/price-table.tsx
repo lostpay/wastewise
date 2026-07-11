@@ -49,7 +49,7 @@ function PriceCell({ line }: { line: POLine }) {
       {showDelta ? (
         <span
           className={`ww-num text-[10px] ${
-            isUnder ? "text-emerald-700" : "text-muted-foreground"
+            isUnder ? "text-emerald-700" : line.flagged ? "text-amber-700" : "text-muted-foreground"
           }`}
         >
           {isUnder ? "−" : "+"}
@@ -77,6 +77,14 @@ function noteText(line: POLine): string {
 
 function NoteCell({ line }: { line: POLine }) {
   const text = noteText(line);
+  if (line.flagged) {
+    return (
+      <div className="flex flex-col gap-0.5 text-left">
+        <span className="ww-label text-amber-700">AI flags this price</span>
+        <span className="text-[11px] leading-snug text-foreground">{text}</span>
+      </div>
+    );
+  }
   if (line.live) {
     return (
       <div className="flex flex-col gap-0.5 text-left">

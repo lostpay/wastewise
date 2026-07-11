@@ -1,4 +1,4 @@
-import type { UploadResponse, ForecastResponse, SourcingResponse, RationaleResponse, ForecastAdjustedItem, POLine, Currency } from "./types";
+import type { UploadResponse, ForecastResponse, SourcingResponse, RationaleResponse, WhatIfResponse, ForecastAdjustedItem, POLine, Currency } from "./types";
 import { DEMO_UPLOAD, DEMO_FORECAST, DEMO_SOURCING, DEMO_RATIONALE, isDemoMode, markDemoServed } from "./demo";
 
 export class ApiError extends Error {
@@ -88,4 +88,15 @@ export function runRationale(
   total: number,
 ): Promise<RationaleResponse> {
   return call("/rationale", jsonInit({ items, lines, savings, total }), DEMO_RATIONALE);
+}
+
+export function runWhatIf(message: string, lines: POLine[], total: number): Promise<WhatIfResponse> {
+  // Demo fallback echoes the order unchanged: the negotiation agent needs
+  // the live backend, and pretending otherwise would fake an AI result.
+  return call("/whatif", jsonInit({ message, lines }), {
+    lines,
+    total,
+    reply: "The what-if assistant needs the live backend — demo mode leaves the order unchanged.",
+    live: false,
+  });
 }
