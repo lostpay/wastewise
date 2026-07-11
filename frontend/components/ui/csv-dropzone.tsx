@@ -10,8 +10,9 @@ interface CsvDropzoneProps {
 }
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const SAMPLE_CSV =
-  "date,item,quantity\n2026-04-01,cabbage,20\n2026-04-01,pork,15\n2026-04-01,chicken,25\n2026-04-02,cabbage,22\n";
+// Served from /public — a 100-day, 10-item dataset with a price column.
+// Forecast-only: items aren't US retail SKUs, so Sourcing won't find matches.
+const SAMPLE_CSV_URL = "/wastewise-sample.csv";
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -88,13 +89,10 @@ export function CsvDropzone({ value, onChange, disabled }: CsvDropzoneProps) {
 
   function downloadSample(e: React.MouseEvent) {
     e.stopPropagation();
-    const blob = new Blob([SAMPLE_CSV], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = SAMPLE_CSV_URL;
     a.download = "wastewise-sample.csv";
     a.click();
-    URL.revokeObjectURL(url);
   }
 
   return (
