@@ -23,10 +23,15 @@ describe("inspectCsv", () => {
     if (!res.ok) expect(res.error).toMatch(/must be a \.csv/i);
   });
 
-  it("rejects a CSV missing a required column", async () => {
-    const res = await inspectCsv(csvFile("sales.csv", "date,item\n2026-01-01,pork\n"));
-    expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.error).toMatch(/quantity/);
+  it("accepts a CSV with nonstandard columns so AI mapping can run server-side", async () => {
+    const res = await inspectCsv(
+      csvFile("sales.csv", "sale_date,product,units_sold\n2026-01-01,pork,3\n2026-01-02,beef,5\n"),
+    );
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.columns).toEqual(["sale_date", "product", "units_sold"]);
+      expect(res.rows).toBe(2);
+    }
   });
 
   it("rejects a file over the size limit before reading it", async () => {
