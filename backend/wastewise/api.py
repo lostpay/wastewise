@@ -12,7 +12,7 @@ from wastewise.ingest import parse_sales_csv, summarize
 from wastewise.pipeline import run_forecast, run_sourcing, run_rationale
 from wastewise.models import AdjustedItem, POLine
 from wastewise.adapters.base import FileCache
-from wastewise.adapters.weather_noaa import NOAAWeather
+from wastewise.adapters.weather_openmeteo import OpenMeteoWeather
 from wastewise.adapters.holidays import USHolidays
 from wastewise.adapters.price_fred import FredWholesale
 from wastewise.adapters.price_kroger import KrogerRetail
@@ -47,7 +47,7 @@ def get_deps() -> dict:
     cache = FileCache(s.cache_dir)
     return {
         "store": DatasetStore(s.db_path),
-        "weather": NOAAWeather(cache),
+        "weather": OpenMeteoWeather(cache),
         "holidays": USHolidays(),
         "wholesale": FredWholesale(s.fred_api_key, cache),
         "retail": KrogerRetail(s.kroger_client_id, s.kroger_client_secret, cache),
