@@ -29,7 +29,7 @@ class _LLM:
 def test_run_forecast_returns_adjusted_items(sample_sales):
     holidays = _Holidays()
     weather = _Weather()
-    resp = run_forecast(sample_sales, "week", "40.7,-74.0", weather, holidays, _LLM())
+    resp = run_forecast(sample_sales, 7, "40.7,-74.0", weather, holidays, _LLM())
     assert {i.item for i in resp.items} == {"cabbage", "pork"}
     assert 0.0 <= resp.baseline_delta <= 1.0
     assert resp.waste_avoided_units >= 0.0
