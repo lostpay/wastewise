@@ -12,7 +12,7 @@ vi.mock("recharts", async (orig) => {
 
 import ForecastPage from "@/app/forecast/page";
 import * as api from "@/lib/api";
-import { DEMO_FORECAST } from "@/lib/demo";
+import { DEMO_FORECAST, DEMO_HISTORY } from "@/lib/demo";
 
 describe("Forecast screen", () => {
   beforeEach(() => {
@@ -50,5 +50,21 @@ describe("Forecast screen", () => {
     // give any pending microtasks/effects a chance to run
     await waitFor(() => expect(screen.queryByText("cabbage")).toBeInTheDocument());
     expect(push).not.toHaveBeenCalledWith("/setup");
+  });
+
+  it("shows the waste-avoided tile when the backtest reports savings", async () => {
+    vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
+    renderWithWizard(<ForecastPage />, { initial: { datasetId: "demo" } });
+    expect(await screen.findByText(/\$61\.50/)).toBeInTheDocument();
+    expect(screen.getByText(/over-ordering avoided/i)).toBeInTheDocument();
+  });
+
+  it("renders the history-vs-forecast chart when history is present", async () => {
+    vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
+    renderWithWizard(<ForecastPage />, {
+      initial: { datasetId: "demo", history: DEMO_HISTORY },
+    });
+    expect(await screen.findByText(/sales history & forecast/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/chart item/i)).toBeInTheDocument();
   });
 });

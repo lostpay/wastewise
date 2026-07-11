@@ -1,6 +1,14 @@
 import type { POLine } from "@/lib/types";
 
-export function POTable({ lines, total }: { lines: POLine[]; total: number }) {
+export function POTable({
+  lines,
+  total,
+  onQtyChange,
+}: {
+  lines: POLine[];
+  total: number;
+  onQtyChange?: (index: number, qty: number) => void;
+}) {
   return (
     <table className="w-full">
       <thead>
@@ -19,7 +27,21 @@ export function POTable({ lines, total }: { lines: POLine[]; total: number }) {
             className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}
           >
             <td className="px-4 py-3 text-sm font-medium capitalize">{l.item}</td>
-            <td className="ww-num px-4 py-3 text-right text-sm">{l.qty}</td>
+            <td className="ww-num px-4 py-3 text-right text-sm">
+              {onQtyChange ? (
+                <input
+                  type="number"
+                  min={0}
+                  step="1"
+                  value={l.qty}
+                  aria-label={`Quantity for ${l.item}`}
+                  onChange={(e) => onQtyChange(idx, Math.max(0, Number(e.target.value) || 0))}
+                  className="ww-num w-20 border border-foreground/25 bg-card px-2 py-1 text-right text-sm focus:border-accent focus:outline-none"
+                />
+              ) : (
+                l.qty
+              )}
+            </td>
             <td className="px-4 py-3 text-sm">
               {l.supplier === "Market" ? (
                 <span className="italic text-muted-foreground">benchmark</span>
@@ -29,6 +51,7 @@ export function POTable({ lines, total }: { lines: POLine[]; total: number }) {
             </td>
             <td className="ww-num px-4 py-3 text-right text-sm">
               ${l.unit_price.toFixed(2)}
+              {l.unit ? <span className="text-muted-foreground"> / {l.unit}</span> : null}
             </td>
             <td className="ww-num px-4 py-3 text-right text-sm">
               ${l.line_total.toFixed(2)}
