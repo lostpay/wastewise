@@ -15,7 +15,7 @@ import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function ForecastPage() {
   const router = useRouter();
-  const { datasetId, horizonDays, location, forecast, history, summary, hydrated, set } = useWizard();
+  const { datasetId, horizonDays, location, currency, forecast, history, summary, hydrated, set } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -30,11 +30,11 @@ export default function ForecastPage() {
     started.current = true;
     setLoading(true);
     setError(null);
-    runForecast(datasetId, horizonDays, location)
+    runForecast(datasetId, horizonDays, location, currency)
       .then((res) => set({ forecast: res }))
       .catch((e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Please try again."))
       .finally(() => setLoading(false));
-  }, [hydrated, datasetId, horizonDays, location, forecast, router, set]);
+  }, [hydrated, datasetId, horizonDays, location, currency, forecast, router, set]);
 
   if (hydrated && !datasetId)
     return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
