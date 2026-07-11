@@ -46,6 +46,9 @@ class ForecastResponse(BaseModel):
     baseline_delta: float
     waste_avoided_units: float = 0.0
     waste_avoided_value: float | None = None
+    location_considered: bool = False
+    location_signal: float = 0.0
+    location_reason: str = ""
 
 
 class POLine(BaseModel):

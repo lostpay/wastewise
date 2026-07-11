@@ -1,7 +1,6 @@
 # wastewise/forecasting/forecaster.py
 import numpy as np
 import pandas as pd
-from xgboost import XGBRegressor
 from wastewise.models import SalesRecord, ForecastItem, BacktestStats
 from wastewise.forecasting.features import build_frame
 from wastewise.forecasting.baseline import baseline_forecast
@@ -9,7 +8,9 @@ from wastewise.forecasting.baseline import baseline_forecast
 FEATURES = ["dow", "weekofyear", "month", "lag7", "roll7", "item_code", "is_holiday"]
 
 
-def _train(df: pd.DataFrame) -> XGBRegressor:
+def _train(df: pd.DataFrame):
+    from xgboost import XGBRegressor
+
     train = df.dropna(subset=FEATURES)
     model = XGBRegressor(n_estimators=120, max_depth=4, learning_rate=0.1,
                          random_state=0)

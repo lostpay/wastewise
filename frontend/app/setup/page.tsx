@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useWizard } from "@/lib/store";
 import { uploadCsv, ApiError } from "@/lib/api";
-import { setDemoMode, clearDemoServed, DEMO_HISTORY, DEMO_UPLOAD } from "@/lib/demo";
+import {
+  setDemoMode,
+  clearDemoServed,
+  DEMO_HISTORY,
+  DEMO_UPLOAD,
+} from "@/lib/demo";
 import { parseSalesHistory } from "@/lib/csv";
 import type { Currency, UploadResponse, HistoryPoint } from "@/lib/types";
 import { CURRENCY_OPTIONS } from "@/lib/types";
@@ -21,11 +26,14 @@ const LocationPicker = dynamic(
 
 export default function SetupPage() {
   const router = useRouter();
-  const { location, horizonDays, currency, datasetId, hydrated, set } = useWizard();
+  const { location, horizonDays, currency, datasetId, hydrated, set } =
+    useWizard();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastDate, setLastDate] = useState<string>(DEMO_UPLOAD.summary.end_date);
+  const [lastDate, setLastDate] = useState<string>(
+    DEMO_UPLOAD.summary.end_date,
+  );
   const cleared = useRef(false);
 
   // Landing on Setup means "start over" — clear any dataset/forecast/sourcing
@@ -38,7 +46,14 @@ export default function SetupPage() {
     if (datasetId) {
       setDemoMode(false);
       clearDemoServed();
-      set({ datasetId: null, summary: null, forecast: null, sourcing: null, rationale: null, history: null });
+      set({
+        datasetId: null,
+        summary: null,
+        forecast: null,
+        sourcing: null,
+        rationale: null,
+        history: null,
+      });
     }
   }, [hydrated, datasetId, set]);
 
@@ -47,18 +62,29 @@ export default function SetupPage() {
   // file (incl. the demo path) fall back to the demo dataset's known end date.
   useEffect(() => {
     if (!file) {
-      setLastDate(DEMO_UPLOAD.summary.end_date);
+      startTransition(() => setLastDate(DEMO_UPLOAD.summary.end_date));
       return;
     }
     let cancelled = false;
-    file.text()
+    file
+      .text()
       .then((text) => {
         if (cancelled) return;
-        const dates = parseSalesHistory(text).map((p) => p.date).sort();
-        setLastDate(dates.length ? dates[dates.length - 1] : DEMO_UPLOAD.summary.end_date);
+        const dates = parseSalesHistory(text)
+          .map((p) => p.date)
+          .sort();
+        startTransition(() => {
+          setLastDate(
+            dates.length
+              ? dates[dates.length - 1]
+              : DEMO_UPLOAD.summary.end_date,
+          );
+        });
       })
       .catch(() => {
-        if (!cancelled) setLastDate(DEMO_UPLOAD.summary.end_date);
+        if (!cancelled) {
+          startTransition(() => setLastDate(DEMO_UPLOAD.summary.end_date));
+        }
       });
     return () => {
       cancelled = true;
@@ -69,7 +95,14 @@ export default function SetupPage() {
     // Clear any forecast/sourcing from a prior dataset. The forecast and
     // sourcing pages skip recomputation when those values are already present,
     // so a new upload must reset them or the wizard shows the previous run's data.
-    set({ datasetId: res.dataset_id, summary: res.summary, forecast: null, sourcing: null, rationale: null, history });
+    set({
+      datasetId: res.dataset_id,
+      summary: res.summary,
+      forecast: null,
+      sourcing: null,
+      rationale: null,
+      history,
+    });
     router.push("/forecast");
   }
 
@@ -81,7 +114,9 @@ export default function SetupPage() {
       const text = await file.text();
       advance(await uploadCsv(file), parseSalesHistory(text));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Upload failed. Please try again.");
+      setError(
+        e instanceof ApiError ? e.message : "Upload failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -92,16 +127,23 @@ export default function SetupPage() {
     setError(null);
     setLoading(true);
     try {
-      advance(await uploadCsv(new File([""], "demo.csv", { type: "text/csv" })), DEMO_HISTORY);
+      advance(
+        await uploadCsv(new File([""], "demo.csv", { type: "text/csv" })),
+        DEMO_HISTORY,
+      );
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Upload failed. Please try again.");
+      setError(
+        e instanceof ApiError ? e.message : "Upload failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
   const [ly, lm, ld] = lastDate.split("-").map(Number);
-  const startISO = new Date(Date.UTC(ly, lm - 1, ld + 1)).toISOString().slice(0, 10);
+  const startISO = new Date(Date.UTC(ly, lm - 1, ld + 1))
+    .toISOString()
+    .slice(0, 10);
 
   return (
     <div className="space-y-8">
@@ -113,8 +155,8 @@ export default function SetupPage() {
         <div className="ww-rule mt-3 w-full text-foreground/40" />
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Upload your sales CSV, or click{" "}
-          <span className="font-medium text-foreground">Use demo dataset</span> to
-          walk the full flow with bundled sample data.
+          <span className="font-medium text-foreground">Use demo dataset</span>{" "}
+          to walk the full flow with bundled sample data.
         </p>
       </div>
 
@@ -125,7 +167,10 @@ export default function SetupPage() {
 
       <div>
         <p className="ww-label mb-2">1.2 &mdash; Location</p>
-        <LocationPicker value={location} onChange={(v) => set({ location: v })} />
+        <LocationPicker
+          value={location}
+          onChange={(v) => set({ location: v })}
+        />
       </div>
 
       <div className="space-y-2">
@@ -159,8 +204,9 @@ export default function SetupPage() {
           onChange={(d) => set({ horizonDays: d })}
         />
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Forecasts start the day after your data ends. Pick an end date up to 14
-          days out &mdash; beyond that, weather forecasts aren&rsquo;t available.
+          Forecasts start the day after your data ends. Pick an end date up to
+          14 days out &mdash; beyond that, weather forecasts aren&rsquo;t
+          available.
         </p>
       </div>
 

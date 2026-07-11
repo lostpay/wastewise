@@ -1,7 +1,20 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import type { DatasetSummary, ForecastResponse, SourcingResponse, RationaleResponse, Currency, HistoryPoint } from "./types";
+import {
+  createContext,
+  startTransition,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import type {
+  DatasetSummary,
+  ForecastResponse,
+  SourcingResponse,
+  RationaleResponse,
+  Currency,
+  HistoryPoint,
+} from "./types";
 
 const KEY = "ww_state";
 
@@ -42,28 +55,32 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = typeof window !== "undefined" ? window.sessionStorage.getItem(KEY) : null;
-      // Parse eagerly (not inside the setState updater) so a corrupt value throws
-      // here, where the catch can handle it, rather than later in the reducer.
+      const raw = window.sessionStorage.getItem(KEY);
       if (raw) {
         const restored = JSON.parse(raw) as Partial<WizardState>;
-        setState((s) => ({ ...s, ...restored }));
+        startTransition(() => {
+          setState((prev) => ({ ...prev, ...restored }));
+        });
       }
     } catch {
-      // Corrupt persisted state must not wedge hydration — drop it and fall back to defaults.
-      if (typeof window !== "undefined") window.sessionStorage.removeItem(KEY);
+      window.sessionStorage.removeItem(KEY);
     }
-    setHydrated(true);
+    startTransition(() => setHydrated(true));
   }, []);
 
   const set = (partial: Partial<WizardState>) =>
     setState((prev) => {
       const next = { ...prev, ...partial };
-      if (typeof window !== "undefined") window.sessionStorage.setItem(KEY, JSON.stringify(next));
+      if (typeof window !== "undefined")
+        window.sessionStorage.setItem(KEY, JSON.stringify(next));
       return next;
     });
 
-  return <WizardContext.Provider value={{ ...state, hydrated, set }}>{children}</WizardContext.Provider>;
+  return (
+    <WizardContext.Provider value={{ ...state, hydrated, set }}>
+      {children}
+    </WizardContext.Provider>
+  );
 }
 
 export function useWizard(): WizardContextValue {

@@ -1,4 +1,8 @@
 import datetime
+import sys
+import types
+
+import numpy as np
 
 from wastewise.models import WeatherInfo, SupplierPrice, AdjustedItem, POLine
 from wastewise.pipeline import run_forecast, run_sourcing, run_rationale
@@ -24,6 +28,48 @@ class _Holidays:
 
 class _LLM:
     def complete(self, system, user): return "note"
+
+
+class _WeatherByLocation:
+    def __init__(self):
+        self.calls = []
+
+    def get_weather(self, date, location):
+        self.calls.append((date, location))
+        if location.startswith("3"):
+            return WeatherInfo(condition="Rain", temp_c=21, precipitation_mm=8)
+        return WeatherInfo(condition="Clear", temp_c=28, precipitation_mm=0)
+
+
+class _FakeXGBRegressor:
+    def __init__(self, *args, **kwargs):
+        self._fit = False
+
+    def fit(self, X, y):
+        self._fit = True
+        return self
+
+    def predict(self, X):
+        # Real XGBRegressor.predict returns an ndarray (forecaster.py calls
+        # .sum() on it) -- match that here instead of a plain list.
+        if hasattr(X, "shape"):
+            return np.array([float(len(X.columns) + 10)] * len(X))
+        return np.array([10.0])
+
+
+def test_run_forecast_changes_with_location(monkeypatch, sample_sales):
+    fake_xgboost = types.SimpleNamespace(XGBRegressor=_FakeXGBRegressor)
+    monkeypatch.setitem(sys.modules, "xgboost", fake_xgboost)
+
+    weather = _WeatherByLocation()
+    holidays = _Holidays()
+    resp_london = run_forecast(sample_sales, 7, "51.50,-0.12", weather, holidays, _LLM())
+    resp_malaysia = run_forecast(sample_sales, 7, "3.14,101.69", weather, holidays, _LLM())
+
+    assert resp_london.location_considered is False
+    assert resp_malaysia.location_considered is True
+    assert resp_malaysia.location_signal > resp_london.location_signal
+    assert resp_london.items[0].adjusted_qty != resp_malaysia.items[0].adjusted_qty
 
 
 def test_run_forecast_returns_adjusted_items(sample_sales):

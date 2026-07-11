@@ -44,6 +44,9 @@ export interface ForecastResponse {
   baseline_delta: number;
   waste_avoided_units?: number;
   waste_avoided_value?: number | null;
+  location_considered?: boolean;
+  location_signal?: number;
+  location_reason?: string;
 }
 
 export interface POLine {

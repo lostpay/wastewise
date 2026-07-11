@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   APIProvider,
   Map,
@@ -34,7 +41,11 @@ function formatLatLon(lat: number, lng: number): string {
   return `${lat.toFixed(4)},${lng.toFixed(4)}`;
 }
 
-function PlacesSearch({ onPick }: { onPick: (lat: number, lng: number, label: string) => void }) {
+function PlacesSearch({
+  onPick,
+}: {
+  onPick: (lat: number, lng: number, label: string) => void;
+}) {
   const places = useMapsLibrary("places");
   const inputRef = useRef<HTMLInputElement | null>(null);
   // Keep the latest callback in a ref so the effect can depend on [places]
@@ -43,16 +54,24 @@ function PlacesSearch({ onPick }: { onPick: (lat: number, lng: number, label: st
   // `.pac-container` dropdown is appended to <body> and never removed — a DOM
   // leak that stacks duplicate dropdowns.
   const onPickRef = useRef(onPick);
-  onPickRef.current = onPick;
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
 
   useEffect(() => {
     if (!places || !inputRef.current) return;
-    const ac = new places.Autocomplete(inputRef.current, { fields: ["geometry", "formatted_address", "name"] });
+    const ac = new places.Autocomplete(inputRef.current, {
+      fields: ["geometry", "formatted_address", "name"],
+    });
     const listener = ac.addListener("place_changed", () => {
       const p = ac.getPlace();
       const loc = p.geometry?.location;
       if (!loc) return;
-      onPickRef.current(loc.lat(), loc.lng(), p.formatted_address ?? p.name ?? "");
+      onPickRef.current(
+        loc.lat(),
+        loc.lng(),
+        p.formatted_address ?? p.name ?? "",
+      );
     });
     return () => {
       listener.remove();
@@ -71,18 +90,27 @@ function PlacesSearch({ onPick }: { onPick: (lat: number, lng: number, label: st
   );
 }
 
-function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
+function MapClickHandler({
+  onClick,
+}: {
+  onClick: (lat: number, lng: number) => void;
+}) {
   const map = useMap();
   // Ref pattern (see PlacesSearch): bind the click listener once per map, not
   // once per render, so a fresh `onClick` closure doesn't re-subscribe.
   const onClickRef = useRef(onClick);
-  onClickRef.current = onClick;
+  useEffect(() => {
+    onClickRef.current = onClick;
+  }, [onClick]);
   useEffect(() => {
     if (!map) return;
-    const listener = map.addListener("click", (e: google.maps.MapMouseEvent) => {
-      if (!e.latLng) return;
-      onClickRef.current(e.latLng.lat(), e.latLng.lng());
-    });
+    const listener = map.addListener(
+      "click",
+      (e: google.maps.MapMouseEvent) => {
+        if (!e.latLng) return;
+        onClickRef.current(e.latLng.lat(), e.latLng.lng());
+      },
+    );
     return () => listener.remove();
   }, [map]);
   return null;
@@ -97,14 +125,22 @@ function MapRecenter({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-function ReverseGeocode({ lat, lng, onLabel }: { lat: number; lng: number; onLabel: (s: string) => void }) {
+function ReverseGeocode({
+  lat,
+  lng,
+  onLabel,
+}: {
+  lat: number;
+  lng: number;
+  onLabel: (s: string) => void;
+}) {
   const geocoding = useMapsLibrary("geocoding");
   useEffect(() => {
     if (!geocoding) return;
     const g = new geocoding.Geocoder();
     let cancelled = false;
     g.geocode({ location: { lat, lng } })
-      .then((res) => {
+      .then((res: google.maps.GeocoderResponse) => {
         if (cancelled) return;
         onLabel(res.results[0]?.formatted_address ?? "");
       })
@@ -118,13 +154,25 @@ function ReverseGeocode({ lat, lng, onLabel }: { lat: number; lng: number; onLab
 
 export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const initial = useMemo(() => parseLatLon(value) ?? { lat: 40.7, lng: -74.0 }, [value]);
+  const initial = useMemo(
+    () => parseLatLon(value) ?? { lat: 40.7, lng: -74.0 },
+    [value],
+  );
   const [point, setPoint] = useState(initial);
   const [label, setLabel] = useState("");
   // Buffer for the manual lat,lon field so we don't fight the user mid-type.
   // Kept as a raw string so pasting "24.18, 120.64" is allowed even though
   // parseLatLon needs it comma-only.
   const [manual, setManual] = useState(formatLatLon(initial.lat, initial.lng));
+
+  useEffect(() => {
+    const next = parseLatLon(value) ?? { lat: 40.7, lng: -74.0 };
+    startTransition(() => {
+      setPoint(next);
+      setManual(formatLatLon(next.lat, next.lng));
+      setLabel("");
+    });
+  }, [value]);
 
   const commit = useCallback(
     (lat: number, lng: number, nextLabel?: string) => {
@@ -162,7 +210,11 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
           className="ww-num border-foreground/25 bg-card"
         />
         <p className="ww-num text-[11px] text-muted-foreground">
-          Set <code className="bg-muted px-1 py-0.5">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in .env.local to enable the map picker.
+          Set{" "}
+          <code className="bg-muted px-1 py-0.5">
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+          </code>{" "}
+          in .env.local to enable the map picker.
         </p>
       </div>
     );
@@ -187,7 +239,11 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
             )}
             <MapClickHandler onClick={commit} />
             <MapRecenter lat={point.lat} lng={point.lng} />
-            <ReverseGeocode lat={point.lat} lng={point.lng} onLabel={setLabel} />
+            <ReverseGeocode
+              lat={point.lat}
+              lng={point.lng}
+              onLabel={setLabel}
+            />
           </Map>
         </div>
         <div className="flex items-center gap-2">

@@ -15,7 +15,16 @@ import { RedirectNotice } from "@/components/redirect-notice";
 
 export default function ForecastPage() {
   const router = useRouter();
-  const { datasetId, horizonDays, location, forecast, history, summary, hydrated, set } = useWizard();
+  const {
+    datasetId,
+    horizonDays,
+    location,
+    forecast,
+    history,
+    summary,
+    hydrated,
+    set,
+  } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -32,15 +41,27 @@ export default function ForecastPage() {
     setError(null);
     runForecast(datasetId, horizonDays, location)
       .then((res) => set({ forecast: res }))
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Something went wrong. Please try again."))
+      .catch((e) =>
+        setError(
+          e instanceof ApiError
+            ? e.message
+            : "Something went wrong. Please try again.",
+        ),
+      )
       .finally(() => setLoading(false));
   }, [hydrated, datasetId, horizonDays, location, forecast, router, set]);
 
   if (hydrated && !datasetId)
-    return <RedirectNotice target="Setup" reason="Upload a sales CSV to start forecasting." />;
+    return (
+      <RedirectNotice
+        target="Setup"
+        reason="Upload a sales CSV to start forecasting."
+      />
+    );
 
   const rangeLabel = (() => {
-    if (!summary) return `next ${horizonDays} day${horizonDays === 1 ? "" : "s"}`;
+    if (!summary)
+      return `next ${horizonDays} day${horizonDays === 1 ? "" : "s"}`;
     const [y, m, d] = summary.end_date.split("-").map(Number);
     const start = new Date(Date.UTC(y, m - 1, d + 1));
     const end = new Date(Date.UTC(y, m - 1, d + horizonDays));
@@ -96,6 +117,14 @@ export default function ForecastPage() {
               />
             ) : null}
           </div>
+          {forecast.location_reason ? (
+            <p className="text-xs text-muted-foreground">
+              {forecast.location_reason}
+              {forecast.location_signal != null
+                ? ` (signal ${(forecast.location_signal * 100).toFixed(0)}%)`
+                : ""}
+            </p>
+          ) : null}
           <div className="border border-foreground/20 bg-card">
             <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
               <p className="ww-label">Fig. 1 — Per-item quantities</p>
@@ -127,13 +156,17 @@ export default function ForecastPage() {
                     <th className="ww-label px-4 py-2 text-right">Model</th>
                     <th className="ww-label px-4 py-2 text-right">Rec.</th>
                     <th className="ww-label px-4 py-2 text-right">Δ</th>
-                    <th className="ww-label hidden px-4 py-2 text-right sm:table-cell">Note</th>
+                    <th className="ww-label hidden px-4 py-2 text-right sm:table-cell">
+                      Note
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {forecast.items.map((it, idx) => {
                     const delta = it.adjusted_qty - it.forecast;
-                    const deltaPct = it.forecast ? (delta / it.forecast) * 100 : 0;
+                    const deltaPct = it.forecast
+                      ? (delta / it.forecast) * 100
+                      : 0;
                     const sign = delta > 0 ? "+" : "";
                     // Down = saved-from-waste (green). Up = justified extra
                     // spend (amber). Zero = muted. Deliberately not "up=good"
@@ -147,15 +180,25 @@ export default function ForecastPage() {
                           : "text-muted-foreground";
                     return (
                       <Fragment key={it.item}>
-                        <tr className={idx > 0 ? "border-t border-dashed border-foreground/15" : ""}>
-                          <td className="px-4 py-3 text-sm font-medium capitalize">{it.item}</td>
+                        <tr
+                          className={
+                            idx > 0
+                              ? "border-t border-dashed border-foreground/15"
+                              : ""
+                          }
+                        >
+                          <td className="px-4 py-3 text-sm font-medium capitalize">
+                            {it.item}
+                          </td>
                           <td className="ww-num px-4 py-3 text-right text-sm text-muted-foreground">
                             {it.forecast.toFixed(1)}
                           </td>
                           <td className="ww-num px-4 py-3 text-right text-sm font-semibold">
                             {it.adjusted_qty.toFixed(1)}
                           </td>
-                          <td className={`ww-num px-4 py-3 text-right text-xs ${deltaColor}`}>
+                          <td
+                            className={`ww-num px-4 py-3 text-right text-xs ${deltaColor}`}
+                          >
                             {sign}
                             {delta.toFixed(1)}
                             <span className="ml-1 opacity-70">
