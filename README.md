@@ -8,7 +8,7 @@ A restaurant uploads its sales history. WasteWise forecasts how much of each ite
 sales history → forecast → agent adjusts & explains → agent sources & prices → drafted PO
 ```
 
-Built solo for the [AMD Developer Hackathon: ACT II](https://lablab.ai/ai-hackathons/amd-developer-hackathon-act-ii) (Unicorn track).
+Built for the [AMD Developer Hackathon: ACT II](https://lablab.ai/ai-hackathons/amd-developer-hackathon-act-ii) (Unicorn track).
 
 ## Live demo
 
@@ -36,7 +36,7 @@ Next.js frontend (Vercel)
 FastAPI backend
   forecast engine   XGBoost + seasonal baseline, per item
   agent steps       adjustment · sourcing selection · PO rationale
-  data adapters     NOAA weather · US holidays · FRED/BLS prices · Kroger retail
+  data adapters     open-meteo weather · US holidays · FRED/BLS prices · Kroger retail
   storage           SQLite
         │ OpenAI-compatible API
         ▼
@@ -57,7 +57,7 @@ Both LLM judgment steps — demand adjustment and supplier selection — run inf
 
 Full evidence (rocm-smi output, vLLM server logs, latency benchmark): [docs/AMD_USAGE.md](docs/AMD_USAGE.md). Step-by-step reproduction: see [Setup](#setup) below.
 
-## Roadmap
+## Incoming Roadmap
 
 - **Waste-photo feedback loop** — vision model estimates end-of-day bin waste to self-correct the forecast.
 - **Recipe/BOM layer** — forecast dishes, roll up to ingredient purchase orders for full-service restaurants.
