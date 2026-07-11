@@ -31,6 +31,86 @@ The backend points at it with a single env var (`LLM_BASE_URL`) — no code chan
 
 Full evidence (rocm-smi output, vLLM server logs, latency benchmark) and reproduction steps: [docs/AMD_USAGE.md](docs/AMD_USAGE.md).
 
+### Tutorial: serving the LLM from the AMD Developer Cloud box
+
+The AMD box (`notebooks.amd.com/hackathon`, ROCm 7.2 + vLLM image) has **no
+inbound network access** — only the JupyterLab terminal is reachable, and
+there's no SSH/open port to the outside world. So the model is served
+locally on the box, then tunneled out. Full gotcha-by-gotcha detail (CA
+cert fixes, Python interpreter pitfalls, stable-subdomain tunnels) lives in
+[docs/AMD_RUNBOOK.md](docs/AMD_RUNBOOK.md) — this is the condensed path.
+
+**1. Serve the model on the GPU**, in a JupyterLab terminal:
+
+```bash
+vllm serve mistralai/Mistral-7B-Instruct-v0.3 --port 8000
+```
+
+Use `mistralai/Mistral-7B-Instruct-v0.3`, not a gated repo like
+`meta-llama/Llama-3.1-8B-Instruct` — gated models 401 without an approved
+HF token. Mistral is open-access and fits comfortably in 48 GB VRAM.
+
+**2. Confirm it's really on the AMD GPU**, in another terminal:
+
+```bash
+curl localhost:8000/v1/models          # model answers locally
+rocm-smi --showproductname --showmeminfo vram
+```
+
+Look for `Card Vendor: Advanced Micro Devices, Inc. [AMD/ATI]`, `GFX
+Version: gfx1100`, and VRAM used climbing once the model loads.
+
+**3. Expose port 8000 publicly.** `cloudflared` is the obvious first choice,
+but on this box its binary download silently produces a 0-byte file (the
+release CDN is blocked while `github.com` itself resolves) — check with
+`file ~/cloudflared` before trusting it. If it's empty, use **ngrok**
+instead, since its own CDN isn't blocked:
+
+```bash
+pip install pyngrok
+```
+
+Get a free authtoken from https://dashboard.ngrok.com/get-started/your-authtoken,
+then open (and leave running in) its own terminal:
+
+```bash
+python3 <<'EOF'
+from pyngrok import ngrok, conf
+conf.get_default().auth_token = "YOUR_TOKEN_HERE"
+tunnel = ngrok.connect(8000, "http")
+print(tunnel.public_url)
+ngrok.get_ngrok_process().proc.wait()   # blocks so the tunnel stays up
+EOF
+```
+
+This prints a public `https://<random>.ngrok-free.dev` URL. (A plain SSH
+reverse tunnel — `ssh -R 80:localhost:8000 nokey@localhost.run` — also works
+with zero install if ngrok is unavailable, but hands out a new random
+subdomain every reconnect.)
+
+**4. Verify from your own machine** (not the box) before wiring anything up:
+
+```bash
+curl https://<your-tunnel-url>/v1/models
+```
+
+**5. Point the deployed backend at it.** In the Render dashboard, set:
+
+```
+LLM_BASE_URL=https://<your-tunnel-url>/v1
+LLM_MODEL=mistralai/Mistral-7B-Instruct-v0.3
+LLM_API_KEY=dummy
+```
+
+Saving triggers a redeploy. Check the deploy logs for the boot banner —
+`[ LLM LIVE ]` with the tunnel URL as endpoint confirms the deployed app is
+really calling the AMD GPU, not silently running on fallback text.
+
+**Keep the vLLM terminal and the tunnel terminal open** for as long as the
+live demo needs to work — closing either one kills the chain, and most free
+tunnel services hand out a new URL on reconnect, so `LLM_BASE_URL` on Render
+would need updating again.
+
 ## How it works
 
 1. **Setup** — upload a sales CSV (`date, item, quantity, price?`) or use the bundled demo dataset; pick a location on the map (drives weather and regional prices) and a horizon (day/week).
