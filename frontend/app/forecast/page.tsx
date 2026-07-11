@@ -8,6 +8,7 @@ import { runForecast, ApiError } from "@/lib/api";
 import { ForecastChart } from "@/components/forecast-chart";
 import { HistoryChart } from "@/components/history-chart";
 import { StatTile } from "@/components/stat-tile";
+import { BacktestExplainer } from "@/components/backtest-explainer";
 import { ReasonBadge } from "@/components/reason-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,6 +112,9 @@ export default function ForecastPage() {
               />
             ) : null}
           </div>
+          {forecast.holdout_daily && forecast.holdout_daily.length > 0 ? (
+            <BacktestExplainer days={forecast.holdout_daily} />
+          ) : null}
           <details className="group border border-dashed border-foreground/20 bg-card px-4 py-3">
             <summary className="ww-label cursor-pointer text-muted-foreground group-hover:text-foreground">
               How is this measured?

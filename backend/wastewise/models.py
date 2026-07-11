@@ -35,10 +35,28 @@ class AdjustedItem(BaseModel):
     daily: list[float] = []
 
 
+class HoldoutDay(BaseModel):
+    """One day of the 7-day backtest holdout, aggregated across items.
+
+    `actual` is what really sold that day. `model` and `baseline` are the
+    forecasters' raw predictions (no safety buffer). `waste_model_value`
+    and `waste_baseline_value` are the dollar over-orderings both
+    forecasters *would have* caused with the 15% safety buffer applied,
+    for the "Waste avoided" chart; None when the CSV has no price column.
+    """
+    date: str
+    actual: float
+    model: float
+    baseline: float
+    waste_model_value: float | None = None
+    waste_baseline_value: float | None = None
+
+
 class BacktestStats(BaseModel):
     delta: float
     waste_avoided_units: float
     waste_avoided_value: float | None
+    holdout_daily: list[HoldoutDay] = []
 
 
 class ForecastResponse(BaseModel):
@@ -46,6 +64,7 @@ class ForecastResponse(BaseModel):
     baseline_delta: float
     waste_avoided_units: float = 0.0
     waste_avoided_value: float | None = None
+    holdout_daily: list[HoldoutDay] = []
 
 
 class POLine(BaseModel):
