@@ -1,7 +1,7 @@
 import datetime
 from wastewise.models import ForecastResponse, SourcingResponse, RationaleResponse, SalesRecord, AdjustedItem, POLine
 from wastewise.forecasting.forecaster import forecast_items
-from wastewise.agents.adjustment import adjust_forecast
+from wastewise.agents.adjustment import adjust_forecast, summarize_adjustments
 from wastewise.agents.sourcing import source_order
 from wastewise.agents.rationale import write_rationale
 
@@ -23,7 +23,8 @@ def run_forecast(records: list[SalesRecord], horizon_days: int, location: str,
     adjusted = adjust_forecast(items, weather, future_holidays, llm)
     return ForecastResponse(items=adjusted, baseline_delta=stats.delta,
                             waste_avoided_units=stats.waste_avoided_units,
-                            waste_avoided_value=stats.waste_avoided_value)
+                            waste_avoided_value=stats.waste_avoided_value,
+                            adjustment=summarize_adjustments(adjusted))
 
 
 def run_sourcing(items: list[dict], location: str, wholesale_src, retail_src,

@@ -1,8 +1,8 @@
 # tests/test_adjustment.py
 import datetime
 
-from wastewise.models import ForecastItem, WeatherInfo
-from wastewise.agents.adjustment import adjust_forecast, FALLBACK_REASON
+from wastewise.models import ForecastItem, WeatherInfo, AdjustedItem
+from wastewise.agents.adjustment import adjust_forecast, FALLBACK_REASON, summarize_adjustments
 
 
 def _one_day(w):
@@ -151,3 +151,21 @@ def test_recommended_qty_is_carried_through_on_success_and_fallback():
     bad = adjust_forecast(_items(), _one_day(WeatherInfo(condition="Clear", temp_c=25,
                           precipitation_mm=0)), [], _BadJsonLLM())
     assert {o.item: o.recommended for o in bad} == {"stew": 115, "salad greens": 90}
+
+
+def test_summarize_adjustments_counts_directions_and_net_pct():
+    adjusted = [
+        AdjustedItem(item="a", forecast=90, adjusted_qty=110, reason="r", live=True, recommended=100),
+        AdjustedItem(item="b", forecast=90, adjusted_qty=90, reason="r", live=True, recommended=100),
+        AdjustedItem(item="c", forecast=90, adjusted_qty=100, reason="r", live=True, recommended=100),
+    ]
+    s = summarize_adjustments(adjusted)
+    assert (s.n_up, s.n_down, s.n_unchanged) == (1, 1, 1)
+    # (110 + 90 + 100) - 300 = 0 -> 0.0%
+    assert s.net_delta_pct == 0.0
+
+
+def test_summarize_adjustments_handles_zero_recommended():
+    s = summarize_adjustments([AdjustedItem(item="a", forecast=0, adjusted_qty=0,
+                                            reason="r", live=False, recommended=0)])
+    assert s.net_delta_pct == 0.0

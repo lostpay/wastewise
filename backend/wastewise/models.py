@@ -44,11 +44,19 @@ class BacktestStats(BaseModel):
     waste_avoided_value: float | None
 
 
+class AdjustmentSummary(BaseModel):
+    n_up: int
+    n_down: int
+    n_unchanged: int
+    net_delta_pct: float
+
+
 class ForecastResponse(BaseModel):
     items: list[AdjustedItem]
     baseline_delta: float
     waste_avoided_units: float = 0.0
     waste_avoided_value: float | None = None
+    adjustment: AdjustmentSummary | None = None
 
 
 class POLine(BaseModel):

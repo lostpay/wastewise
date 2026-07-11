@@ -2,7 +2,7 @@ import datetime
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
-from wastewise.models import ForecastItem, AdjustedItem, WeatherInfo, Holiday
+from wastewise.models import ForecastItem, AdjustedItem, WeatherInfo, Holiday, AdjustmentSummary
 from wastewise.agents.llm import extract_json
 
 MAX_ADJUST_FRAC = 0.25
@@ -85,3 +85,14 @@ def adjust_forecast(items: list[ForecastItem],
     # across items regardless of prompt wording (see SYSTEM above).
     with ThreadPoolExecutor(max_workers=min(3, len(items)) or 1) as pool:
         return list(pool.map(_adjust_one_partial, items))
+
+
+def summarize_adjustments(adjusted: list[AdjustedItem]) -> AdjustmentSummary:
+    n_up = sum(1 for a in adjusted if a.adjusted_qty > a.recommended)
+    n_down = sum(1 for a in adjusted if a.adjusted_qty < a.recommended)
+    rec_sum = sum(a.recommended for a in adjusted)
+    net = 0.0 if rec_sum == 0 else \
+        (sum(a.adjusted_qty for a in adjusted) - rec_sum) / rec_sum * 100
+    return AdjustmentSummary(n_up=n_up, n_down=n_down,
+                             n_unchanged=len(adjusted) - n_up - n_down,
+                             net_delta_pct=round(net, 1))
