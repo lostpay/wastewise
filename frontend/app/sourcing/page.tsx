@@ -16,7 +16,11 @@ export default function SourcingPage() {
   const { forecast, location, sourcing, hydrated, set, datasetId, currency } = useWizard();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
+
+  // Idempotency latch keyed on the actual inputs to the fetch. See the same
+  // pattern in forecast/page.tsx for why we key rather than reset a boolean
+  // ref (avoids StrictMode dev double-invoke duplicating the network call).
+  const firedFor = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!hydrated) return;
@@ -24,8 +28,13 @@ export default function SourcingPage() {
       router.push("/forecast");
       return;
     }
-    if (sourcing || started.current) return;
-    started.current = true;
+    if (sourcing) return;
+    // Forecast identity is part of the key: a new forecast object (e.g. from
+    // a horizon change on setup) is a different input set and should re-run.
+    const forecastKey = forecast.items.map((it) => `${it.item}:${it.adjusted_qty}`).join(",");
+    const key = `${datasetId ?? ""}|${location}|${currency}|${forecastKey}`;
+    if (firedFor.current.has(key)) return;
+    firedFor.current.add(key);
     setLoading(true);
     setError(null);
     const items = forecast.items.map((it) => ({ item: it.item, qty: it.adjusted_qty }));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +39,12 @@ export function HorizonCalendar({ start, days, maxDays = 14, onChange }: Horizon
   // The view month defaults to the anchor's month; the [start, start+maxDays-1]
   // window can spill into the next month, so allow navigation between them.
   const [view, setView] = useState({ y: startDate.getUTCFullYear(), m: startDate.getUTCMonth() });
+  // Snap the view to the anchor whenever the anchor changes -- e.g. after a
+  // CSV upload replaces the DEMO fallback date. Otherwise the calendar shows
+  // the initial month even though the selectable window has moved.
+  useEffect(() => {
+    setView({ y: startDate.getUTCFullYear(), m: startDate.getUTCMonth() });
+  }, [start]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const firstOfMonth = new Date(Date.UTC(view.y, view.m, 1));
   const leadBlanks = firstOfMonth.getUTCDay();

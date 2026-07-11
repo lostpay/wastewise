@@ -125,7 +125,21 @@ export default function SetupPage() {
 
       <div>
         <p className="ww-label mb-2">1.2 &mdash; Location</p>
-        <LocationPicker value={location} onChange={(v) => set({ location: v })} />
+        <LocationPicker
+          value={location}
+          onChange={(v) =>
+            // Location feeds weather + holidays into the LLM adjustment, so
+            // changing it invalidates the cached forecast (and everything
+            // downstream). Otherwise the wizard shows the previous location's
+            // Recommended bars even after the user picks a new place.
+            set({
+              location: v,
+              forecast: null,
+              sourcing: null,
+              rationale: null,
+            })
+          }
+        />
       </div>
 
       <div className="space-y-2">
@@ -136,7 +150,17 @@ export default function SetupPage() {
           id="currency"
           className="ww-num h-9 w-full border border-foreground/25 bg-card px-3 text-sm focus:border-accent focus:outline-none"
           value={currency}
-          onChange={(e) => set({ currency: e.target.value as Currency })}
+          onChange={(e) =>
+            // Currency drives price conversion in sourcing (and, on the
+            // forecast-currency PR, in the over-ordering metric). Clear
+            // cached results so the wizard re-runs with the new setting.
+            set({
+              currency: e.target.value as Currency,
+              forecast: null,
+              sourcing: null,
+              rationale: null,
+            })
+          }
         >
           {CURRENCY_OPTIONS.map((c) => (
             <option key={c.code} value={c.code}>
@@ -153,15 +177,41 @@ export default function SetupPage() {
 
       <div className="space-y-2">
         <p className="ww-label">1.4 &mdash; Forecast horizon</p>
-        <HorizonCalendar
-          start={startISO}
-          days={horizonDays}
-          onChange={(d) => set({ horizonDays: d })}
-        />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Forecasts start the day after your data ends. Pick an end date up to 14
-          days out &mdash; beyond that, weather forecasts aren&rsquo;t available.
-        </p>
+        {file ? (
+          <>
+            <HorizonCalendar
+              start={startISO}
+              days={horizonDays}
+              onChange={(d) =>
+                // Changing the horizon invalidates every downstream result
+                // (forecast, sourcing, rationale all depend on it). Clear
+                // them so the wizard actually re-runs with the new range
+                // instead of showing the previous horizon's numbers.
+                set({
+                  horizonDays: d,
+                  forecast: null,
+                  sourcing: null,
+                  rationale: null,
+                })
+              }
+            />
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Forecasts start the day after your data ends. Pick an end date up
+              to 14 days out &mdash; beyond that, weather forecasts aren&rsquo;t
+              available.
+            </p>
+          </>
+        ) : (
+          <div className="border border-dashed border-foreground/25 bg-card px-4 py-8 text-center">
+            <p className="ww-label mb-2 text-muted-foreground">
+              Awaiting sales history
+            </p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Upload a CSV above &mdash; the calendar will anchor to the day
+              after your data ends.
+            </p>
+          </div>
+        )}
       </div>
 
       {error && (

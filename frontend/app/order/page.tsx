@@ -40,6 +40,14 @@ export default function OrderPage() {
       .finally(() => setRationaleLoading(false));
   }, [hydrated, forecast, sourcing, rationale, set]);
 
+  // Reset the latch when the inputs get cleared (e.g. setup cleared them on a
+  // horizon change), so the next visit refetches. Deliberately not on the
+  // "sourcing reference changed" case -- the qty-edit handler mutates
+  // sourcing on purpose and set started.current=true to suppress a refetch.
+  useEffect(() => {
+    if (!forecast || !sourcing) started.current = false;
+  }, [forecast, sourcing]);
+
   if (!hydrated) return null;
   if (!sourcing)
     return <RedirectNotice target="Sourcing" reason="Pick suppliers before reviewing the purchase order." />;
