@@ -15,6 +15,9 @@ export const DEMO_FORECAST: ForecastResponse = {
   baseline_delta: 0.18,
   waste_avoided_units: 34,
   waste_avoided_value: 61.5,
+  ai_waste_avoided_units: 22,
+  ai_waste_avoided_value: 18.75,
+  adjustment: { n_up: 0, n_down: 3, n_unchanged: 0, net_delta_pct: -10.7 },
   holdout_daily: [
     { date: "2026-06-23", actual: 68, model: 71, baseline: 82, waste_model_value: 6.9, waste_baseline_value: 32.4 },
     { date: "2026-06-24", actual: 74, model: 76, baseline: 79, waste_model_value: 6.3, waste_baseline_value: 11.5 },

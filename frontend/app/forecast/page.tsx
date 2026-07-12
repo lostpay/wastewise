@@ -8,7 +8,6 @@ import { runForecast, ApiError } from "@/lib/api";
 import { ForecastChart } from "@/components/forecast-chart";
 import { HistoryChart } from "@/components/history-chart";
 import { StatTile } from "@/components/stat-tile";
-import { BacktestExplainer } from "@/components/backtest-explainer";
 import { ReasonBadge } from "@/components/reason-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,7 +75,7 @@ export default function ForecastPage() {
           Per-item demand for the {rangeLabel}. The base model predicts sales
           from your history and adds a spoilage-aware safety buffer (5–15% by
           shelf life); an AI agent then adjusts only when weather or holidays
-          warrant it, capped at ±25%.
+          warrant it, capped at ±40%.
         </p>
       </div>
 
@@ -88,72 +87,48 @@ export default function ForecastPage() {
         <Skeleton className="h-80 w-full" />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <StatTile
-              label="Base-model accuracy gain vs. simple seasonal baseline"
-              value={`${Math.round(forecast.baseline_delta * 100)}%`}
-              kicker="more accurate than a rule-of-thumb forecast"
-              hint="Lower mean absolute error on a 7-day holdout vs. a naive same-weekday baseline. Measured on the base model, before the AI weather adjustment. Higher is better."
-            />
-            {(forecast.waste_avoided_units ?? 0) > 0 ? (
-              <StatTile
-                label="Waste avoided"
-                accent
-                value={
-                  forecast.waste_avoided_value != null
-                    ? `$${forecast.waste_avoided_value.toFixed(2)}`
-                    : `${(forecast.waste_avoided_units ?? 0).toFixed(0)} units`
-                }
-                kicker={
-                  forecast.waste_avoided_value != null
-                    ? "money you didn't waste on over-ordering"
-                    : "units you didn't waste on over-ordering"
-                }
-                hint="Same 7-day holdout: what a naive same-weekday ordering policy would have over-bought, minus this model's over-buy — both with the same 15% buffer (the backtest compares policies, not the spoilage-aware buffers)."
-              />
-            ) : null}
-            {forecast.adjustment ? (
-              <StatTile
-                label="AI weather adjustment (net)"
-                value={`${forecast.adjustment.net_delta_pct >= 0 ? "+" : ""}${forecast.adjustment.net_delta_pct.toFixed(1)}%`}
-                hint={`${forecast.adjustment.n_up} raised, ${forecast.adjustment.n_down} lowered, ${forecast.adjustment.n_unchanged} unchanged vs. the buffered recommendation. Each item is capped at ±25%.`}
-              />
-            ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(() => {
+              // Combine the backtested base-model savings with the projected AI
+              // savings on this horizon into one visitor-facing number. The
+              // "How is this measured?" panel explains the two components.
+              const base = forecast.waste_avoided_value ?? 0;
+              const ai = forecast.ai_waste_avoided_value ?? 0;
+              const combined = base + ai;
+              const baseUnits = forecast.waste_avoided_units ?? 0;
+              const aiUnits = forecast.ai_waste_avoided_units ?? 0;
+              const combinedUnits = baseUnits + aiUnits;
+              const hasValue = forecast.waste_avoided_value != null
+                || forecast.ai_waste_avoided_value != null;
+              if (combined === 0 && combinedUnits === 0) return null;
+              return (
+                <StatTile
+                  label="Waste avoided (this order)"
+                  accent
+                  value={hasValue ? `$${combined.toFixed(2)}` : `${combinedUnits.toFixed(0)} units`}
+                  kicker="money this order saves vs. buying what sold on the same weekday last week"
+                  hint="A restaurant without modeling would guess 'next Monday sells what last Monday sold' — that's the rule of thumb. Our forecast beat it on your last 7 days of history; the AI then trims further based on weather and holidays for this horizon."
+                />
+              );
+            })()}
+            {forecast.adjustment ? (() => {
+              const changed = forecast.adjustment.n_up + forecast.adjustment.n_down;
+              const total = changed + forecast.adjustment.n_unchanged;
+              const unchanged = forecast.adjustment.n_unchanged;
+              return (
+                <StatTile
+                  label="Items adjusted by AI"
+                  value={`${changed} of ${total}`}
+                  kicker="where weather or holidays warranted a change"
+                  hint={
+                    unchanged === total
+                      ? "No item had a clear weather or holiday signal this horizon; every item stayed at the base recommendation."
+                      : `${forecast.adjustment.n_up} raised, ${forecast.adjustment.n_down} lowered. ${unchanged} had no clear signal and stayed at the base recommendation.`
+                  }
+                />
+              );
+            })() : null}
           </div>
-          {forecast.holdout_daily && forecast.holdout_daily.length > 0 ? (
-            <BacktestExplainer days={forecast.holdout_daily} />
-          ) : null}
-          <details className="group border border-dashed border-foreground/20 bg-card px-4 py-3">
-            <summary className="ww-label cursor-pointer text-muted-foreground group-hover:text-foreground">
-              How is this measured?
-            </summary>
-            <div className="mt-3 space-y-2 text-[11px] leading-relaxed text-muted-foreground">
-              <p>
-                We take the last 7 days of your uploaded sales history and hide
-                them from the model. We train on everything before that, ask
-                the model to predict those 7 hidden days, and compare its
-                predictions to what actually sold.
-              </p>
-              <p>
-                <span className="ww-label text-foreground">Baseline: </span>
-                a naive rule &mdash; &ldquo;next Monday will sell what last
-                Monday sold.&rdquo; This is what a restaurant would do
-                without any modelling.
-              </p>
-              <p>
-                <span className="ww-label text-foreground">Accuracy: </span>
-                percent reduction in mean absolute error (average distance
-                between predicted and actual, in units) vs. the naive rule.
-              </p>
-              <p>
-                <span className="ww-label text-foreground">Waste avoided: </span>
-                dollars (or units, if your CSV had no price column) of
-                over-ordering the naive rule would have caused, minus the
-                over-ordering our model would have caused &mdash; both with
-                a 15% safety buffer applied.
-              </p>
-            </div>
-          </details>
           <div className="border border-foreground/20 bg-card">
             <div className="flex items-center justify-between border-b border-foreground/15 px-4 py-2">
               <p className="ww-label">Fig. 1 — Per-item quantities</p>

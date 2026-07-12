@@ -66,6 +66,13 @@ def forecast_items(records: list[SalesRecord], horizon_days: int,
     return items, stats
 
 
+def mean_prices(records: list[SalesRecord], currency: str = "USD") -> dict[str, float]:
+    """Public alias so callers outside the backtest (e.g. pipeline) can
+    reuse the same currency-aware per-item mean price without importing
+    a private helper."""
+    return _mean_prices(records, currency)
+
+
 def _mean_prices(records: list[SalesRecord], currency: str = "USD") -> dict[str, float]:
     # Convert once at ingest so downstream $-denominated aggregates
     # (waste_avoided_value) don't silently mix currencies.

@@ -80,6 +80,13 @@ class ForecastResponse(BaseModel):
     waste_avoided_value: float | None = None
     adjustment: AdjustmentSummary | None = None
     holdout_daily: list[HoldoutDay] = []
+    # Projected dollars of over-ordering avoided by the LLM's item-specific
+    # nudge, on top of the base model. Sum of max(0, recommended - adjusted)
+    # * mean_price across items. `None` when the CSV has no price column;
+    # never a backtest, always forward-looking on the current horizon.
+    ai_waste_avoided_value: float | None = None
+    # Same idea in unit counts, for CSVs without prices.
+    ai_waste_avoided_units: float = 0.0
 
 
 class POLine(BaseModel):

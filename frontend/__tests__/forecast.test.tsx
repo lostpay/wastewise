@@ -35,7 +35,7 @@ describe("Forecast screen", () => {
       expect(screen.getAllByText(/fresh-cut sides like cabbage slaw/i).length).toBeGreaterThan(0));
     expect(screen.getAllByText(/pork's use in stews softens the drop/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/quick-grill items like chicken/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/18%/)).toBeInTheDocument(); // baseline_delta 0.18 -> "18%"
+    expect(screen.getAllByText(/waste avoided/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /model/i })).toBeInTheDocument();
   });
@@ -54,10 +54,11 @@ describe("Forecast screen", () => {
     expect(push).not.toHaveBeenCalledWith("/setup");
   });
 
-  it("shows the waste-avoided tile when the backtest reports savings", async () => {
+  it("shows the waste-avoided tile summing base backtest + AI projection", async () => {
     vi.spyOn(api, "runForecast").mockResolvedValue(DEMO_FORECAST);
     renderWithWizard(<ForecastPage />, { initial: { datasetId: "demo" } });
-    expect(await screen.findByText(/\$61\.50/)).toBeInTheDocument();
+    // Demo has waste_avoided_value $61.50 + ai_waste_avoided_value $18.75 = $80.25.
+    expect(await screen.findByText(/\$80\.25/)).toBeInTheDocument();
     // Both the tile label and the methodology disclosure mention "Waste
     // avoided"; either is enough to prove the tile rendered.
     expect(screen.getAllByText(/waste avoided/i).length).toBeGreaterThan(0);
