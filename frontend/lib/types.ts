@@ -67,6 +67,11 @@ export interface ForecastResponse {
   waste_avoided_value?: number | null;
   adjustment?: AdjustmentSummary | null;
   holdout_daily?: HoldoutDay[];
+  // Projected dollars / units of over-ordering avoided by the LLM's
+  // downward nudges on the current horizon. Forward-looking, not a
+  // backtest -- separate from waste_avoided_value which is base-model only.
+  ai_waste_avoided_units?: number;
+  ai_waste_avoided_value?: number | null;
 }
 
 export interface POLine {
