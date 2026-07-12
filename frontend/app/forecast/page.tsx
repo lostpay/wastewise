@@ -106,8 +106,8 @@ export default function ForecastPage() {
                   label="Waste avoided (this order)"
                   accent
                   value={hasValue ? `$${combined.toFixed(2)}` : `${combinedUnits.toFixed(0)} units`}
-                  kicker="money this order avoids in over-buying vs. rule-of-thumb"
-                  hint="Backtested savings from the base model on your last 7 days, plus projected savings from the AI's downward nudges on this horizon."
+                  kicker="money this order saves vs. buying what sold on the same weekday last week"
+                  hint="A restaurant without modeling would guess 'next Monday sells what last Monday sold' — that's the rule of thumb. Our forecast beat it on your last 7 days of history; the AI then trims further based on weather and holidays for this horizon."
                 />
               );
             })()}
