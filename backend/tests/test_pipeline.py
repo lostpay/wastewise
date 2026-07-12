@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from wastewise.models import WeatherInfo, SupplierPrice, AdjustedItem, POLine
 from wastewise.pipeline import run_forecast, run_sourcing, run_rationale
@@ -38,6 +39,36 @@ def test_run_forecast_returns_adjusted_items(sample_sales):
     start, end = holidays.calls[0]
     assert start == min(r.date for r in sample_sales)
     assert end == max(r.date for r in sample_sales) + datetime.timedelta(days=7)
+
+
+def test_run_forecast_ai_waste_avoided_is_none_without_price_column(sample_sales):
+    # _LLM.complete always returns invalid JSON, so every item falls back to
+    # its unadjusted recommended qty -- units stay at 0, and since sample_sales
+    # carries no price data the dollar figure must be None, not 0.0.
+    resp = run_forecast(sample_sales, 7, "40.7,-74.0", _Weather(), _Holidays(), _LLM())
+    assert resp.ai_waste_avoided_value is None
+    assert resp.ai_waste_avoided_units == 0.0
+
+
+class _LoweringLLM:
+    """Nudges every item's recommended qty down by exactly 10% -- within the
+    +/-40% hard cap, so the resulting delta is exactly computable."""
+    def complete(self, system, user):
+        # `[\d.]+` would also swallow the sentence-ending period after the
+        # number ("recommended quantity: 204.44."), so match digits with at
+        # most one internal decimal point instead.
+        rec = float(re.search(r"recommended quantity: (\d+(?:\.\d+)?)", user).group(1))
+        return f'{{"adjusted_qty": {rec * 0.9}, "reason": "test nudge down."}}'
+
+
+def test_run_forecast_ai_waste_avoided_sums_downward_nudges_at_mean_price(sample_sales):
+    priced = [r.model_copy(update={"price": 2.0}) for r in sample_sales]
+    resp = run_forecast(priced, 7, "40.7,-74.0", _Weather(), _Holidays(), _LoweringLLM())
+    delta_units = sum(max(0.0, i.recommended - i.adjusted_qty) for i in resp.items)
+    assert delta_units > 0  # sanity: the stub LLM really did nudge every item down
+    assert resp.ai_waste_avoided_units == round(delta_units, 2)
+    # every record was priced at a flat $2.00, so the mean price per item is $2.00
+    assert resp.ai_waste_avoided_value == round(delta_units * 2.0, 2)
 
 
 class _Wholesale:

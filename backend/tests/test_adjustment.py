@@ -1,8 +1,10 @@
 # tests/test_adjustment.py
 import datetime
+import re
 
 from wastewise.models import ForecastItem, WeatherInfo, AdjustedItem
-from wastewise.agents.adjustment import adjust_forecast, FALLBACK_REASON, summarize_adjustments
+from wastewise.agents.adjustment import (adjust_forecast, FALLBACK_REASON,
+                                         summarize_adjustments, SYSTEM, MAX_ADJUST_FRAC)
 
 
 def _one_day(w):
@@ -169,3 +171,18 @@ def test_summarize_adjustments_handles_zero_recommended():
     s = summarize_adjustments([AdjustedItem(item="a", forecast=0, adjusted_qty=0,
                                             reason="r", live=False, recommended=0)])
     assert s.net_delta_pct == 0.0
+
+
+def test_no_prompt_starting_point_exceeds_the_hard_cap():
+    """The SYSTEM prompt's hardcoded 'START from X%' scenarios must all be
+    reachable under MAX_ADJUST_FRAC. If a starting point exceeds the cap,
+    the LLM's reason will describe a swing the returned adjusted_qty never
+    actually reflects (e.g. a prior bug: a -70% typhoon starting point with
+    only a +/-40% hard cap)."""
+    starting_points = [int(m) for m in re.findall(r"START from ([+-]?\d+)%", SYSTEM)]
+    assert starting_points, "expected at least one hardcoded starting point in the prompt"
+    cap_pct = MAX_ADJUST_FRAC * 100
+    for pct in starting_points:
+        assert abs(pct) <= cap_pct, (
+            f"prompt starting point {pct}% exceeds the +/-{cap_pct:.0f}% hard cap"
+        )
