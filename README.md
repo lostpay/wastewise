@@ -17,19 +17,6 @@ Built for the [AMD Developer Hackathon: ACT II](https://lablab.ai/ai-hackathons/
 - **Demo video (~90 s):** <!-- TODO: add video link -->
 - **Slide deck (PDF):** <!-- TODO: add deck link/path -->
 
-## How this was built with AI
-
-This was built session-by-session with Claude Code: each unit of work started as a written plan, got implemented and tested, then a separate review pass checked the diff before merge. The docs are committed, not summarized after the fact:
-
-- **Specs** (what to build, and why): [`docs/specs/`](docs/specs)
-- **Plans** (task-by-task implementation breakdowns, one per feature/fix): [`docs/plans/`](docs/plans), [`docs/superpowers/plans/`](docs/superpowers/plans)
-- **Reviews** (what was checked before merging, and what was wrong): [`docs/reviews/`](docs/reviews)
-
-Two concrete examples of catching and fixing AI-produced mistakes, not just accepting output:
-
-- **A silently 100%-broken pipeline.** On 2026-07-10 a debugging session found that `/forecast` and `/sourcing` had *never* made a single successful LLM call — the shipped dev `LLM_MODEL` id 404'd against Fireworks, so both agents had been running on deterministic fallback text the whole time with no visible error. The same investigation caught two more silent failures: a dead USDA API credential, and a Kroger retail adapter that grabbed the first blind search match (`filter.limit=1`) instead of the right one, sometimes pricing a specialty SKU instead of the plain commodity and silently returning $0.00 on no-match. Root cause, fix plan, and the fix itself are in [`docs/superpowers/plans/2026-07-10-wastewise-ai-fixes.md`](docs/superpowers/plans/2026-07-10-wastewise-ai-fixes.md) — including the decision to run dev against local Ollama on the *same* Mistral model the AMD box serves, specifically so model-specific quirks surface in dev instead of during the live demo.
-- **A pre-submission readiness review that changed the plan.** [`docs/reviews/2026-07-11-hackathon-readiness-review.md`](docs/reviews/2026-07-11-hackathon-readiness-review.md) is an AI-run audit against the hackathon's actual judging criteria, done the day of the deadline. It correctly flagged that the engineering was done (78/78 backend tests, 43/43 frontend) but the submission would still fail pre-screening — no demo video, no deck, a suspended hosted backend, and a GPU-name inconsistency between the spec and the actual `rocm-smi` evidence (W7900, not the MI300X earlier docs assumed). That review's priority list is what got worked through last, not the code.
-
 ## How it works
 
 1. **Setup** — upload a sales CSV (`date, item, quantity, price?`) or use the bundled demo dataset; pick a location on the map (drives weather and regional prices) and a horizon (day/week).
@@ -182,6 +169,19 @@ really calling the AMD GPU, not silently running on fallback text.
 live demo needs to work — closing either one kills the chain, and most free
 tunnel services hand out a new URL on reconnect, so `LLM_BASE_URL` on Render
 would need updating again.
+
+## How this was built with AI
+
+This was built session-by-session with Claude Code: each unit of work started as a written plan, got implemented and tested, then a separate review pass checked the diff before merge. The docs are committed, not summarized after the fact:
+
+- **Specs** (what to build, and why): [`docs/specs/`](docs/specs)
+- **Plans** (task-by-task implementation breakdowns, one per feature/fix): [`docs/plans/`](docs/plans), [`docs/superpowers/plans/`](docs/superpowers/plans)
+- **Reviews** (what was checked before merging, and what was wrong): [`docs/reviews/`](docs/reviews)
+
+Two concrete examples of catching and fixing AI-produced mistakes, not just accepting output:
+
+- **A silently 100%-broken pipeline.** On 2026-07-10 a debugging session found that `/forecast` and `/sourcing` had *never* made a single successful LLM call — the shipped dev `LLM_MODEL` id 404'd against Fireworks, so both agents had been running on deterministic fallback text the whole time with no visible error. The same investigation caught two more silent failures: a dead USDA API credential, and a Kroger retail adapter that grabbed the first blind search match (`filter.limit=1`) instead of the right one, sometimes pricing a specialty SKU instead of the plain commodity and silently returning $0.00 on no-match. Root cause, fix plan, and the fix itself are in [`docs/superpowers/plans/2026-07-10-wastewise-ai-fixes.md`](docs/superpowers/plans/2026-07-10-wastewise-ai-fixes.md) — including the decision to run dev against local Ollama on the *same* Mistral model the AMD box serves, specifically so model-specific quirks surface in dev instead of during the live demo.
+- **A pre-submission readiness review that changed the plan.** [`docs/reviews/2026-07-11-hackathon-readiness-review.md`](docs/reviews/2026-07-11-hackathon-readiness-review.md) is an AI-run audit against the hackathon's actual judging criteria, done the day of the deadline. It correctly flagged that the engineering was done (78/78 backend tests, 43/43 frontend) but the submission would still fail pre-screening — no demo video, no deck, a suspended hosted backend, and a GPU-name inconsistency between the spec and the actual `rocm-smi` evidence (W7900, not the MI300X earlier docs assumed). That review's priority list is what got worked through last, not the code.
 
 ## License
 
